@@ -51,6 +51,15 @@ public class MainActivity extends Activity {
 
     	enableCommandButtons(false);
     	
+    	if (mBluetoothAdapter == null) {
+			mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
+	        mTextViewStatus.setText("找不到蓝牙模块！");
+		}else{
+            if (mBluetoothAdapter.isEnabled()) {
+           		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
+            }
+        }
+    	
 		mBtnConnect.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
