@@ -9,44 +9,63 @@
     tools:context=".MainActivity" >
 
     <TextView
-        android:id="@+id/mainTextViewState"
+        android:id="@+id/mainTextViewStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:text="请连接设备" />
+        android:textSize="18sp"
+        android:text="请选择并连接设备" />
 
     <Button
         android:id="@+id/mainBtnConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/mainTextViewState"
-        android:layout_below="@+id/mainTextViewState"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/mainTextViewStatus"
         android:layout_marginTop="21dp"
         android:text="连接" />
 
-    <Button
-        android:id="@+id/mainBtnOpen"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/mainBtnConnect"
-        android:layout_below="@+id/mainBtnConnect"
-        android:text="开门" />
+        android:layout_marginTop="30dp"
+        android:layout_marginBottom="30dp"
+        android:layout_above="@+id/mainBtnStop"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/mainBtnConnect" >
 
-    <Button
-        android:id="@+id/mainBtnClose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/mainBtnOpen"
-        android:layout_below="@+id/mainBtnOpen"
-        android:text="关门" />
-    
+        <Button
+            android:id="@+id/mainBtnOpen"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="开门" />
+
+        <Button
+            android:id="@+id/mainBtnClose"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="关门" />
+
+    </LinearLayout>
+
     <Button
         android:id="@+id/mainBtnStop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/mainBtnClose"
-        android:layout_below="@+id/mainBtnClose"
+        android:layout_alignLeft="@+id/mainBtnConnect"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="114dp"
         android:text="停止" />
 
+    <CheckBox
+        android:id="@+id/checkBox1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="70dp"
+        android:text="记住密码" />
 
 </RelativeLayout>
