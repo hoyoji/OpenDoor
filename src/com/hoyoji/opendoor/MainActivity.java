@@ -3,25 +3,32 @@ package com.hoyoji.opendoor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.app.Activity;
+import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.view.Menu;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.hoyoji.opendoor.R;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ListActivity {
 
     private final UUID MY_UUID =  UUID.fromString( "E35C83BD-34EA-4C13-90BE-195D1134253A");
     private static final int SELECT_BT_DEVICE = 0;
@@ -37,6 +44,10 @@ public class MainActivity extends Activity {
 	private Button mBtnStop;
 	private Button mBtnClose;
 	private Button mBtnOpen;
+	private TextView mTextViewEmpty;
+	
+	private ArrayList<String> mDevicesTitleArray = new ArrayList<String>();
+	private ArrayList<BluetoothDevice> mDevicesArray = new ArrayList<BluetoothDevice>();
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -93,8 +104,51 @@ public class MainActivity extends Activity {
 				}
 			}
 		});
+		
+		ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mDevicesTitleArray);
+        setListAdapter(adapter);
+        
+        mTextViewEmpty = (TextView)findViewById(android.R.id.empty);
+        mTextViewEmpty.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				discoverDevices();
+			}
+		});
+        
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+    	this.registerReceiver(btReceiver, filter);
+    	
+		discoverDevices();
 	}
+	
+	private final BroadcastReceiver btReceiver = new BroadcastReceiver(){
 
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(BluetoothDevice.ACTION_FOUND.equals(action)){
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+				mDevicesTitleArray.add(device.getName());	
+				mDevicesArray.add(device);
+				
+				((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
+			}
+			
+		}
+		
+	};
+	
+	
+	protected void discoverDevices() {
+		mTextViewEmpty.setText("正在查找设备...");
+		
+		if(!mBluetoothAdapter.isDiscovering()){
+			mBluetoothAdapter.startDiscovery();
+		}
+		
+	}
 	protected void connect() {
 		if(mBluetoothService != null){
 			mBluetoothService.cancel();
