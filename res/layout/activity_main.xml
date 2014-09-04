@@ -29,7 +29,7 @@
             android:id="@id/android:list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@+id/checkBox1"
+            android:layout_above="@+id/linearLayout1"
             android:layout_below="@+id/mainTextViewStatus"
             android:background="#E0E0E0"
             android:drawSelectorOnTop="true" />
@@ -40,23 +40,13 @@
             android:id="@id/android:empty"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_above="@+id/checkBox1"
+            android:layout_above="@+id/linearLayout1"
             android:layout_below="@+id/mainTextViewStatus"
+            android:background="#E0E0E0"
             android:gravity="center"
             android:text="请点击搜索设备"
-            android:background="#E0E0E0"
             android:textColor="#0000FF" />
-        
-        <CheckBox
-            android:id="@+id/checkBox1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:layout_above="@+id/linearLayout1"
-            android:layout_alignParentLeft="true"
-            android:text="记住密码" />
-        
+
         <LinearLayout
             android:id="@+id/linearLayout1"
             android:layout_width="match_parent"
@@ -86,7 +76,6 @@
                 android:layout_weight="1"
                 android:text="关门" />
         </LinearLayout>
-
     </RelativeLayout>
 
     <Button

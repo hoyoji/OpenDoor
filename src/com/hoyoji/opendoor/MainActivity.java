@@ -11,21 +11,30 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.graphics.Color;
+import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -80,7 +89,18 @@ public class MainActivity extends ListActivity {
 			@Override
 			public void onClick(View v) {
 				if(mBluetoothService != null){
-					mBluetoothService.write("开门".getBytes());
+					PasswordRetriever passwordRetriever = PasswordRetriever.newInstance(MainActivity.this, mSelectedDevice);
+					passwordRetriever.setPasswordRetrieveListener(new PasswordRetrieveListener(){
+						@Override
+						public void onPasswordRetrieved(String password) {
+							if(password != null) {
+								mBluetoothService.write(("开门"+password).getBytes());
+							} else {
+								Toast.makeText(getApplicationContext(), "请输入密码", Toast.LENGTH_SHORT).show();
+							}
+						}
+					});
+					passwordRetriever.retrievePassword();
 				}
 			}
 		});
@@ -201,6 +221,7 @@ public class MainActivity extends ListActivity {
 		}
 		
 	};
+	
 	private final BroadcastReceiver connectionReceiver = new BroadcastReceiver(){
 
 		@Override
@@ -229,9 +250,10 @@ public class MainActivity extends ListActivity {
             if (mBluetoothAdapter.isEnabled()) {
             	populatePariedDevices();
         		if(!mBluetoothAdapter.isDiscovering()){
-        			mBluetoothAdapter.startDiscovery();
-        			mTextViewEmpty.setText("正在查找设备...");
-        			mTextViewFooter.setText("正在查找设备...");
+        			if(mBluetoothAdapter.startDiscovery()){
+	        			mTextViewEmpty.setText("正在搜索设备...");
+	        			mTextViewFooter.setText("正在搜索设备...");
+        			}
         		}
             } else {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -241,6 +263,8 @@ public class MainActivity extends ListActivity {
         }
 		
 	}
+	
+	
 //	protected void connect() {
 //		if(mBluetoothService != null){
 //			mBluetoothService.cancel();
@@ -480,4 +504,57 @@ public class MainActivity extends ListActivity {
 		unregisterReceiver(discoverReceiver);
 	}
 
+	private interface PasswordRetrieveListener{
+		public void onPasswordRetrieved(String password);
+	}
+	
+	private static class PasswordRetriever{
+		BluetoothDevice mDevice;
+		PasswordRetrieveListener mPasswordRetrieveListener;
+		Context mContext;
+		public PasswordRetriever(Context context, BluetoothDevice device){
+			mDevice = device;
+			mContext = context;
+		}
+		
+		public static PasswordRetriever newInstance(Context context, BluetoothDevice device) {
+			return new PasswordRetriever(context, device);
+		}
+
+		public void setPasswordRetrieveListener(PasswordRetrieveListener passwordRetrieveListener){
+			mPasswordRetrieveListener = passwordRetrieveListener;
+		}
+		
+		public void retrievePassword(){
+			final EditText passwordEdit = new EditText(mContext);
+			passwordEdit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+//			passwordEdit.setRawInputType(Configuration.KEYBOARD_12KEY);
+			new AlertDialog.Builder(mContext).setTitle("请输入密码")
+				.setIcon(android.R.drawable.ic_dialog_info)
+				.setView(passwordEdit)
+				.setPositiveButton("确定", new OnClickListener(){
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						mPasswordRetrieveListener.onPasswordRetrieved(passwordEdit.getText().toString());
+					}
+				}).setNegativeButton("取消", new OnClickListener(){
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						mPasswordRetrieveListener.onPasswordRetrieved(null);
+					}
+				}).show();
+
+				passwordEdit.post(
+				new Runnable() {
+				    public void run() {
+				        InputMethodManager inputMethodManager =  (InputMethodManager)mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+				        inputMethodManager.toggleSoftInputFromWindow(passwordEdit.getApplicationWindowToken(),  InputMethodManager.SHOW_IMPLICIT, 0);
+				    }
+				});
+		}
+		
+		public void retrieveNewPassword(){
+			mPasswordRetrieveListener.onPasswordRetrieved(null);
+		}
+	}
 }
