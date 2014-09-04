@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 
 import android.os.Bundle;
@@ -19,11 +20,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.hoyoji.opendoor.R;
@@ -32,10 +36,12 @@ public class MainActivity extends ListActivity {
 
     private final UUID MY_UUID =  UUID.fromString( "E35C83BD-34EA-4C13-90BE-195D1134253A");
     private static final int SELECT_BT_DEVICE = 0;
+	private static final int REQUEST_CONNECT_DEVICE = 0;
 	final int REQUEST_ENABLE_BT = 1;
     
 	private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothDevice mSelectedDevice;
+	private String mSelectedDeviceName;
 	
 	private BluetoothServiceThread mBluetoothService;
 	
@@ -45,6 +51,7 @@ public class MainActivity extends ListActivity {
 	private Button mBtnClose;
 	private Button mBtnOpen;
 	private TextView mTextViewEmpty;
+	private TextView mTextViewFooter;
 	
 	private ArrayList<String> mDevicesTitleArray = new ArrayList<String>();
 	private ArrayList<BluetoothDevice> mDevicesArray = new ArrayList<BluetoothDevice>();
@@ -62,21 +69,12 @@ public class MainActivity extends ListActivity {
 
     	enableCommandButtons(false);
     	
-    	if (mBluetoothAdapter == null) {
-			mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
-	        mTextViewStatus.setText("找不到蓝牙模块！");
-		}else{
-            if (mBluetoothAdapter.isEnabled()) {
-           		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
-            }
-        }
-    	
-		mBtnConnect.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				connect();
-			}
-		});
+//		mBtnConnect.setOnClickListener(new View.OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				connect();
+//			}
+//		});
 		
 		mBtnOpen.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -116,13 +114,63 @@ public class MainActivity extends ListActivity {
 			}
 		});
         
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-    	this.registerReceiver(btReceiver, filter);
+        mTextViewFooter = new TextView(this);
+        mTextViewFooter.setText("请点击搜索更多设备");
+        mTextViewFooter.setGravity(Gravity.CENTER);
+        mTextViewFooter.setPadding(0, 20, 0, 20);
+        mTextViewFooter.setTextSize(16f);
+        mTextViewFooter.setBackgroundColor(Color.LTGRAY);
+        ListView.LayoutParams layoutParams = new ListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        mTextViewFooter.setLayoutParams(layoutParams);
+        mTextViewFooter.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				discoverDevices();
+			}
+		});
+
+		getListView().setFooterDividersEnabled(true);
+        getListView().addFooterView(mTextViewFooter, null, false);
+        
+        IntentFilter foundfilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+    	this.registerReceiver(foundReceiver, foundfilter);
+
+        IntentFilter discoverfilter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+    	this.registerReceiver(discoverReceiver, discoverfilter);
+		
+    	IntentFilter connectionfilter = new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+    	this.registerReceiver(connectionReceiver, connectionfilter);
+		
     	
-		discoverDevices();
+    	if (mBluetoothAdapter == null) {
+			mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
+	        mTextViewStatus.setText("找不到蓝牙模块！");
+		} else {
+            if (mBluetoothAdapter.isEnabled()) {
+           		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
+            	populatePariedDevices();
+        		discoverDevices();
+            } else {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            	mTextViewStatus.setText("正在开启蓝牙...");
+            }
+        }
 	}
 	
-	private final BroadcastReceiver btReceiver = new BroadcastReceiver(){
+	private void populatePariedDevices() {
+		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+		if(pairedDevices.size() > 0){
+			for(BluetoothDevice device : pairedDevices){
+				mDevicesTitleArray.add(device.getName());	
+				mDevicesArray.add(device);
+			}
+			((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
+		}
+		
+	}
+
+	private final BroadcastReceiver foundReceiver = new BroadcastReceiver(){
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -130,6 +178,17 @@ public class MainActivity extends ListActivity {
 			if(BluetoothDevice.ACTION_FOUND.equals(action)){
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
+				
+				for(int i=0; i < mDevicesArray.size(); i++){
+					BluetoothDevice dev = mDevicesArray.get(i);
+					if(dev.getAddress().equals(device.getAddress())){
+						// 该设备已经在列表中
+						TextView textView = (TextView)getListView().getChildAt(i).findViewById(android.R.id.text1);
+						textView.setTextColor(Color.BLUE);
+						return;
+					}
+				}
+				
 				mDevicesTitleArray.add(device.getName());	
 				mDevicesArray.add(device);
 				
@@ -139,63 +198,133 @@ public class MainActivity extends ListActivity {
 		}
 		
 	};
-	
+	private final BroadcastReceiver discoverReceiver = new BroadcastReceiver(){
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
+				mTextViewEmpty.setText("请点击搜索设备");
+				mTextViewFooter.setText("请点击搜索更多设备");
+			}
+			
+		}
+		
+	};
+	private final BroadcastReceiver connectionReceiver = new BroadcastReceiver(){
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED.equals(action)){
+//	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);  
+	            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);  
+	            if (state == BluetoothAdapter.STATE_CONNECTED) {  
+	            } else if (state == BluetoothAdapter.STATE_DISCONNECTED) {  
+					mBluetoothService = null;
+	                mTextViewStatus.setText("连接已断开，请重新连接设备。");
+					enableCommandButtons(false);
+	            }  
+			}
+			
+		}
+		
+	};
 	
 	protected void discoverDevices() {
-		mTextViewEmpty.setText("正在查找设备...");
-		
-		if(!mBluetoothAdapter.isDiscovering()){
-			mBluetoothAdapter.startDiscovery();
-		}
-		
-	}
-	protected void connect() {
-		if(mBluetoothService != null){
-			mBluetoothService.cancel();
-			mBluetoothService = null;
-			enableCommandButtons(false);
+		if (mBluetoothAdapter == null) {
+			mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
+	        mTextViewStatus.setText("找不到蓝牙模块！");
 		} else {
-			if (mBluetoothAdapter == null) {
-				mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
-		        mTextViewStatus.setText("找不到蓝牙模块！");
-			}else{
-	            if (!mBluetoothAdapter.isEnabled()) {
-	                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-	                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-	            	mTextViewStatus.setText("正在开启蓝牙...");
-	            } else {
-	            	if(mSelectedDevice == null){
-	            		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
-	            	}
-		        	selectBtDevice();
-	            }
-	        }
-		}
+            if (mBluetoothAdapter.isEnabled()) {
+        		if(!mBluetoothAdapter.isDiscovering()){
+        			mBluetoothAdapter.startDiscovery();
+        			mTextViewEmpty.setText("正在查找设备...");
+        			mTextViewFooter.setText("正在查找设备...");
+        		}
+            } else {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            	mTextViewStatus.setText("正在开启蓝牙...");
+            }
+        }
+		
 	}
+//	protected void connect() {
+//		if(mBluetoothService != null){
+//			mBluetoothService.cancel();
+//			mBluetoothService = null;
+//			enableCommandButtons(false);
+//		} else {
+//			if (mBluetoothAdapter == null) {
+//				mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
+//		        mTextViewStatus.setText("找不到蓝牙模块！");
+//			}else{
+//	            if (!mBluetoothAdapter.isEnabled()) {
+//	                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//	                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+//	            	mTextViewStatus.setText("正在开启蓝牙...");
+//	            } else {
+//	            	if(mSelectedDevice == null){
+//	            		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
+//	            	}
+//		        	selectBtDevice();
+//	            }
+//	        }
+//		}
+//	}
 
+	@Override  
+    public void onListItemClick(ListView l, View v, int position, long id) { 
+    	BluetoothDevice selectedDevice = mDevicesArray.get(position);
+    	String deviceName = ((TextView)v).getText().toString();
+    	connectToBtDevice(deviceName, selectedDevice);
+    }  
+	
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	if(requestCode == REQUEST_ENABLE_BT){
 	        if(resultCode == RESULT_OK) {
 	        	mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
-	        	selectBtDevice();
+	        	populatePariedDevices();
+	    		discoverDevices();
 	        } else {
 	        	mTextViewStatus.setText("请开启蓝牙后再尝试连接！");
 	        }
-    	} else if(requestCode == SELECT_BT_DEVICE){
+    	} else if(requestCode == REQUEST_CONNECT_DEVICE){
 	        if(resultCode == RESULT_OK) {
-	        	BluetoothDevice selectedDevice = data.getParcelableExtra("DEVICE");
-	        	connectToBtDevice(data.getStringExtra("DEVICE_NAME"), selectedDevice);
+	        	connectToBtDevice(mSelectedDeviceName, mSelectedDevice);
 	        } else {
+	        	mTextViewStatus.setText("请开启蓝牙后再尝试连接！");
 	        }
     	}
+//    	else if(requestCode == SELECT_BT_DEVICE){
+//	        if(resultCode == RESULT_OK) {
+//	        	BluetoothDevice selectedDevice = data.getParcelableExtra("DEVICE");
+//	        	connectToBtDevice(data.getStringExtra("DEVICE_NAME"), selectedDevice);
+//	        } else {
+//	        }
+//    	}
 
     }
     
     private void connectToBtDevice(String deviceName, BluetoothDevice device) {
     	mSelectedDevice = device;
-    	ConnectThread connectThread = new ConnectThread(deviceName, mSelectedDevice, mHandler);
-    	connectThread.start();
+    	mSelectedDeviceName = deviceName;
+
+        if (mBluetoothAdapter.isEnabled()) {
+        	if(mBluetoothService != null){
+				mBluetoothService.cancel();
+				mBluetoothService = null;
+				enableCommandButtons(false);
+        	}
+        	ConnectThread connectThread = new ConnectThread(deviceName, mSelectedDevice, mHandler);
+        	connectThread.start();
+        } else {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_CONNECT_DEVICE);
+        	mTextViewStatus.setText("正在开启蓝牙...");
+        }
     }
 
 	private void enableCommandButtons(boolean b){
@@ -208,11 +337,11 @@ public class MainActivity extends ListActivity {
 			mBtnConnect.setText("连接");
 		}
     }
-    
-	private void selectBtDevice() {
-		Intent intent = new Intent(this, DevicesActivity.class);
-		startActivityForResult(intent, SELECT_BT_DEVICE);
-	}
+//    
+//	private void selectBtDevice() {
+//		Intent intent = new Intent(this, DevicesActivity.class);
+//		startActivityForResult(intent, SELECT_BT_DEVICE);
+//	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -350,5 +479,15 @@ public class MainActivity extends ListActivity {
         }
     }
 
+
+	@Override
+	public void onDestroy(){
+		super.onDestroy();
+		if(mBluetoothAdapter.isDiscovering()) {
+			mBluetoothAdapter.cancelDiscovery();
+		}
+		unregisterReceiver(foundReceiver);
+		unregisterReceiver(discoverReceiver);
+	}
 
 }
