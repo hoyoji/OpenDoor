@@ -141,24 +141,14 @@ public class MainActivity extends ListActivity {
     	IntentFilter connectionfilter = new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
     	this.registerReceiver(connectionReceiver, connectionfilter);
 		
-    	
-    	if (mBluetoothAdapter == null) {
-			mTextViewStatus.setTextColor(Color.parseColor("#FF0000"));
-	        mTextViewStatus.setText("找不到蓝牙模块！");
-		} else {
-            if (mBluetoothAdapter.isEnabled()) {
-           		mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
-            	populatePariedDevices();
-        		discoverDevices();
-            } else {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            	mTextViewStatus.setText("正在开启蓝牙...");
-            }
-        }
+   		discoverDevices();
 	}
 	
 	private void populatePariedDevices() {
+    	mDevicesArray.clear();
+    	mDevicesTitleArray.clear();
+		((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
+
 		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 		if(pairedDevices.size() > 0){
 			for(BluetoothDevice device : pairedDevices){
@@ -237,6 +227,7 @@ public class MainActivity extends ListActivity {
 	        mTextViewStatus.setText("找不到蓝牙模块！");
 		} else {
             if (mBluetoothAdapter.isEnabled()) {
+            	populatePariedDevices();
         		if(!mBluetoothAdapter.isDiscovering()){
         			mBluetoothAdapter.startDiscovery();
         			mTextViewEmpty.setText("正在查找设备...");
@@ -286,7 +277,6 @@ public class MainActivity extends ListActivity {
     	if(requestCode == REQUEST_ENABLE_BT){
 	        if(resultCode == RESULT_OK) {
 	        	mTextViewStatus.setText("蓝牙已开启，请选择要连接的设备。");
-	        	populatePariedDevices();
 	    		discoverDevices();
 	        } else {
 	        	mTextViewStatus.setText("请开启蓝牙后再尝试连接！");
