@@ -44,7 +44,6 @@ import com.hoyoji.opendoor.R;
 public class MainActivity extends ListActivity {
 
     private final UUID MY_UUID =  UUID.fromString( "E35C83BD-34EA-4C13-90BE-195D1134253A");
-    private static final int SELECT_BT_DEVICE = 0;
 	private static final int REQUEST_CONNECT_DEVICE = 0;
 	final int REQUEST_ENABLE_BT = 1;
     
@@ -55,15 +54,16 @@ public class MainActivity extends ListActivity {
 	private BluetoothServiceThread mBluetoothService;
 	
 	private TextView mTextViewStatus;
-	private Button mBtnConnect;
+	private EditText mEditTextPassword;
 	private Button mBtnStop;
 	private Button mBtnClose;
 	private Button mBtnOpen;
-	private TextView mTextViewEmpty;
+//	private TextView mTextViewEmpty;
 	private TextView mTextViewFooter;
 	
 	private ArrayList<String> mDevicesTitleArray = new ArrayList<String>();
 	private ArrayList<BluetoothDevice> mDevicesArray = new ArrayList<BluetoothDevice>();
+	private Command mCurrentCommand;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -71,12 +71,10 @@ public class MainActivity extends ListActivity {
 		setContentView(R.layout.activity_main);
 		
 		mTextViewStatus = (TextView) findViewById(R.id.mainTextViewStatus);
-		mBtnConnect = (Button) findViewById(R.id.mainBtnConnect);
+		mEditTextPassword = (EditText) findViewById(R.id.mainEditTextPassword);
 		mBtnStop = (Button) findViewById(R.id.mainBtnStop);
 		mBtnClose = (Button) findViewById(R.id.mainBtnClose);
 		mBtnOpen = (Button) findViewById(R.id.mainBtnOpen);
-
-    	enableCommandButtons(false);
     	
 //		mBtnConnect.setOnClickListener(new View.OnClickListener() {
 //			@Override
@@ -88,51 +86,40 @@ public class MainActivity extends ListActivity {
 		mBtnOpen.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if(mBluetoothService != null){
-					PasswordRetriever passwordRetriever = PasswordRetriever.newInstance(MainActivity.this, mSelectedDevice);
-					passwordRetriever.setPasswordRetrieveListener(new PasswordRetrieveListener(){
-						@Override
-						public void onPasswordRetrieved(String password) {
-							if(password != null) {
-								mBluetoothService.write(("开门"+password).getBytes());
-							} else {
-								Toast.makeText(getApplicationContext(), "请输入密码", Toast.LENGTH_SHORT).show();
-							}
-						}
-					});
-					passwordRetriever.retrievePassword();
-				}
+				Command openCommand = new Command();
+				openCommand.setType(Command.CMD_OPEN);
+				issueCommand(openCommand);
 			}
 		});
 		
 		mBtnClose.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if(mBluetoothService != null){
-					mBluetoothService.write("关门".getBytes());
-				}
+				Command openCommand = new Command();
+				openCommand.setType(Command.CMD_CLOSE);
+				issueCommand(openCommand);
 			}
 		});
 		
 		mBtnStop.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if(mBluetoothService != null){
-					mBluetoothService.write("停止".getBytes());
-				}
+				Command openCommand = new Command();
+				openCommand.setType(Command.CMD_STOP);
+				issueCommand(openCommand);
 			}
 		});
 		
 		ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mDevicesTitleArray);
         setListAdapter(adapter);
         
-        mTextViewEmpty = (TextView)findViewById(android.R.id.empty);
-        mTextViewEmpty.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				discoverDevices();
-			}
-		});
+//        mTextViewEmpty = (TextView)findViewById(android.R.id.empty);
+//        mTextViewEmpty.setOnClickListener(new View.OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				discoverDevices();
+//			}
+//		});
         
         mTextViewFooter = new TextView(this);
         mTextViewFooter.setText("请点击搜索更多设备");
@@ -164,6 +151,41 @@ public class MainActivity extends ListActivity {
    		discoverDevices();
 	}
 	
+	private void issueCommand(Command command){
+		if(mSelectedDevice == null){
+			mTextViewStatus.setText("请选择要连接的设备。");
+			Toast.makeText(getApplicationContext(), "请选择要连接的设备。", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		
+		String password = mEditTextPassword.getText().toString();
+		
+		if(password.length() == 4) {
+		
+			byte[] passwordBytes = new byte[4];
+			for(int i = 0; i < 4; i++){
+				if(password.charAt(i) < '0' || password.charAt(i) > '9'){
+//					Toast.makeText(getApplicationContext(), "密码只能包含数字", Toast.LENGTH_SHORT).show();
+					mEditTextPassword.setError("密码只能包含数字");
+					return;
+				} else {
+					passwordBytes[i] = (byte) (password.charAt(i) - 48);
+				}
+			}
+
+			mCurrentCommand = command;
+			if(mBluetoothService != null && mBluetoothService.isConnected()){
+				command.setPassword(passwordBytes);
+				mBluetoothService.write(command.toString().getBytes());
+			} else {
+				connectToBtDevice(mSelectedDeviceName, mSelectedDevice);
+			}
+		} else {
+			Toast.makeText(getApplicationContext(), "请输入4位数的密码", Toast.LENGTH_SHORT).show();
+			mEditTextPassword.setError("请输入4位数的密码");
+		}
+	}
+	
 	private void populatePariedDevices() {
     	mDevicesArray.clear();
     	mDevicesTitleArray.clear();
@@ -188,17 +210,18 @@ public class MainActivity extends ListActivity {
 			if(BluetoothDevice.ACTION_FOUND.equals(action)){
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-				
-				for(int i=0; i < mDevicesArray.size(); i++){
-					BluetoothDevice dev = mDevicesArray.get(i);
-					if(dev.getAddress().equals(device.getAddress())){
-						// 该设备已经在列表中
-						TextView textView = (TextView)getListView().getChildAt(i).findViewById(android.R.id.text1);
-						textView.setTextColor(Color.BLUE);
-						return;
+				if(device.getBondState() == BluetoothDevice.BOND_BONDED){
+					for(int i=0; i < mDevicesArray.size(); i++){
+						BluetoothDevice dev = mDevicesArray.get(i);
+						if(dev.getAddress().equals(device.getAddress())){
+							// 该设备已经在列表中
+							TextView textView = (TextView)getListView().getChildAt(i).findViewById(android.R.id.text1);
+							textView.setTextColor(Color.BLUE);
+							return;
+						}
 					}
+					return;
 				}
-				
 				mDevicesTitleArray.add(device.getName());	
 				mDevicesArray.add(device);
 				
@@ -214,7 +237,7 @@ public class MainActivity extends ListActivity {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if(BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
-				mTextViewEmpty.setText("请点击搜索设备");
+//				mTextViewEmpty.setText("请点击搜索设备");
 				mTextViewFooter.setText("请点击搜索更多设备");
 			}
 			
@@ -234,13 +257,13 @@ public class MainActivity extends ListActivity {
 	            } else if (state == BluetoothAdapter.STATE_DISCONNECTED) {  
 					mBluetoothService = null;
 	                mTextViewStatus.setText("连接已断开，请重新连接设备。");
-					enableCommandButtons(false);
 	            }  
 			}
 			
 		}
 		
 	};
+	private ConnectThread mConnectThread;
 	
 	protected void discoverDevices() {
 		if (mBluetoothAdapter == null) {
@@ -251,7 +274,7 @@ public class MainActivity extends ListActivity {
             	populatePariedDevices();
         		if(!mBluetoothAdapter.isDiscovering()){
         			if(mBluetoothAdapter.startDiscovery()){
-	        			mTextViewEmpty.setText("正在搜索设备...");
+//	        			mTextViewEmpty.setText("正在搜索设备...");
 	        			mTextViewFooter.setText("正在搜索设备...");
         			}
         		}
@@ -293,6 +316,7 @@ public class MainActivity extends ListActivity {
     public void onListItemClick(ListView l, View v, int position, long id) { 
     	BluetoothDevice selectedDevice = mDevicesArray.get(position);
     	String deviceName = ((TextView)v).getText().toString();
+    	mCurrentCommand = null;
     	connectToBtDevice(deviceName, selectedDevice);
     }  
 	
@@ -325,32 +349,32 @@ public class MainActivity extends ListActivity {
     private void connectToBtDevice(String deviceName, BluetoothDevice device) {
     	mSelectedDevice = device;
     	mSelectedDeviceName = deviceName;
-
+    	if(mConnectThread != null){
+    		if(mConnectThread.getDevice() == mSelectedDevice){
+    			return;
+    		} else {
+    			mConnectThread.close();
+    		}
+    	}
         if (mBluetoothAdapter.isEnabled()) {
         	if(mBluetoothService != null){
 				mBluetoothService.cancel();
 				mBluetoothService = null;
-				enableCommandButtons(false);
         	}
-        	ConnectThread connectThread = new ConnectThread(deviceName, mSelectedDevice, mHandler);
-        	connectThread.start();
+        	mConnectThread = new ConnectThread(deviceName, mSelectedDevice, mHandler);
+        	mConnectThread.start();
         } else {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_CONNECT_DEVICE);
         	mTextViewStatus.setText("正在开启蓝牙...");
         }
     }
-
-	private void enableCommandButtons(boolean b){
-		mBtnStop.setEnabled(b);
-		mBtnClose.setEnabled(b);
-		mBtnOpen.setEnabled(b);
-		if(b){
-			mBtnConnect.setText("断开");
-		} else {
-			mBtnConnect.setText("连接");
-		}
-    }
+//
+//	private void enableCommandButtons(boolean b){
+//		mBtnStop.setEnabled(b);
+//		mBtnClose.setEnabled(b);
+//		mBtnOpen.setEnabled(b);
+//    }
 //    
 //	private void selectBtDevice() {
 //		Intent intent = new Intent(this, DevicesActivity.class);
@@ -370,22 +394,27 @@ public class MainActivity extends ListActivity {
            String data = (String)msg.obj;
            mTextViewStatus.setText(data);
            
-           if(msg.what == 1){
-        	   // 正在连接
-   	           mBtnConnect.setEnabled(false);
-           } else if(msg.what == 0){
+           if(msg.what == 2){
+        	   // 发送成功
+           } else if(msg.what == 1){
         	   // 连接成功
-   	    	   enableCommandButtons(true);
-   	           mBtnConnect.setEnabled(true);
+        	   mConnectThread = null;
+   	           if(mCurrentCommand != null){
+   	        	   issueCommand(mCurrentCommand);
+   	           }
+           } else if(msg.what == 0){
+        	   // 正在连接
            } else if(msg.what == -1){
+        	   mConnectThread = null;
         	   // 连接错误
-   	           mBtnConnect.setEnabled(true);
            } else if(msg.what == -2){
         	   // 发送错误
                 mTextViewStatus.setText("连接已断开，请重新连接设备。");
 	   			mBluetoothService.cancel();
 	   			mBluetoothService = null;
-	   			enableCommandButtons(false);
+   	           if(mCurrentCommand != null){
+   	        	   issueCommand(mCurrentCommand);
+   	           }
            }
         }
 
@@ -412,13 +441,15 @@ public class MainActivity extends ListActivity {
     	}
     	
     	public void run(){
-            mHandler.obtainMessage(1, -1, -1, "正在连接到设备：" + mDeviceName + "...").sendToTarget();
-    		mBluetoothAdapter.cancelDiscovery();
+            mHandler.obtainMessage(0, -1, -1, "正在连接到设备：" + mDeviceName + "...").sendToTarget();
+            if(mBluetoothAdapter.isDiscovering()){
+            	mBluetoothAdapter.cancelDiscovery();
+            }
     		try {
     			mSocket = mDevice.createRfcommSocketToServiceRecord(MY_UUID);
     			mSocket.connect();
     		} catch (IOException connectException){
-                mHandler.obtainMessage(-1, -1, -1, "无法连接到设备：" + mDeviceName + "\n" + connectException.getMessage()).sendToTarget();
+                mHandler.obtainMessage(-1, -1, -1, "无法连接到设备：" + mDeviceName + "\n设备未开启或不在附近").sendToTarget();
     			try{
     				if(mSocket != null){
     					mSocket.close();
@@ -428,11 +459,25 @@ public class MainActivity extends ListActivity {
     			return;
         	}
     		
+//    		if(mSocket.isConnected()){
+    			mBluetoothService = new BluetoothServiceThread(mSocket, mHandler);
+    			mBluetoothService.start();
+    			mHandler.obtainMessage(1, -1, -1, "已连接到设备：" + mDeviceName).sendToTarget();
+//    		}
 
-	    	mBluetoothService = new BluetoothServiceThread(mSocket, mHandler);
-	    	mBluetoothService.start();
-
-            mHandler.obtainMessage(0, -1, -1, "已连接到设备：" + mDeviceName).sendToTarget();
+    	}
+    	
+    	public BluetoothDevice getDevice(){
+    		return mDevice;
+    	}
+    	
+    	public void close(){
+    		if(mSocket != null){
+    			try {
+					mSocket.close();
+				} catch (IOException e) {
+				}
+    		}
     	}
     }
     
@@ -460,7 +505,7 @@ public class MainActivity extends ListActivity {
         }
 
         public void run() {
-            byte[] buffer = new byte[1024];  // buffer store for the stream
+            byte[] buffer = new byte[259];  // buffer store for the stream
             int bytes; // bytes returned from read()
 
             // Keep listening to the InputStream until an exception occurs
@@ -476,10 +521,20 @@ public class MainActivity extends ListActivity {
             }
         }
 
+        public boolean isConnected(){
+        	return mmSocket.isConnected();
+        }
+        
         /* Call this from the main activity to send data to the remote device */
         public void write(byte[] bytes) {
             try {
                 mmOutStream.write(bytes);
+                String cmdName = "";
+                if(mCurrentCommand != null){
+                	cmdName = mCurrentCommand.getTypeName();
+                }
+                mHandler.obtainMessage(2, -1, -1, cmdName + " 命令发送成功。").sendToTarget();
+				mCurrentCommand = null;
             } catch (IOException e) { 
                 mHandler.obtainMessage(-2, -1, -1, e.getMessage()).sendToTarget();
             }
@@ -502,59 +557,7 @@ public class MainActivity extends ListActivity {
 		}
 		unregisterReceiver(foundReceiver);
 		unregisterReceiver(discoverReceiver);
+		unregisterReceiver(connectionReceiver);
 	}
 
-	private interface PasswordRetrieveListener{
-		public void onPasswordRetrieved(String password);
-	}
-	
-	private static class PasswordRetriever{
-		BluetoothDevice mDevice;
-		PasswordRetrieveListener mPasswordRetrieveListener;
-		Context mContext;
-		public PasswordRetriever(Context context, BluetoothDevice device){
-			mDevice = device;
-			mContext = context;
-		}
-		
-		public static PasswordRetriever newInstance(Context context, BluetoothDevice device) {
-			return new PasswordRetriever(context, device);
-		}
-
-		public void setPasswordRetrieveListener(PasswordRetrieveListener passwordRetrieveListener){
-			mPasswordRetrieveListener = passwordRetrieveListener;
-		}
-		
-		public void retrievePassword(){
-			final EditText passwordEdit = new EditText(mContext);
-			passwordEdit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-//			passwordEdit.setRawInputType(Configuration.KEYBOARD_12KEY);
-			new AlertDialog.Builder(mContext).setTitle("请输入密码")
-				.setIcon(android.R.drawable.ic_dialog_info)
-				.setView(passwordEdit)
-				.setPositiveButton("确定", new OnClickListener(){
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						mPasswordRetrieveListener.onPasswordRetrieved(passwordEdit.getText().toString());
-					}
-				}).setNegativeButton("取消", new OnClickListener(){
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						mPasswordRetrieveListener.onPasswordRetrieved(null);
-					}
-				}).show();
-
-				passwordEdit.post(
-				new Runnable() {
-				    public void run() {
-				        InputMethodManager inputMethodManager =  (InputMethodManager)mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
-				        inputMethodManager.toggleSoftInputFromWindow(passwordEdit.getApplicationWindowToken(),  InputMethodManager.SHOW_IMPLICIT, 0);
-				    }
-				});
-		}
-		
-		public void retrieveNewPassword(){
-			mPasswordRetrieveListener.onPasswordRetrieved(null);
-		}
-	}
 }
