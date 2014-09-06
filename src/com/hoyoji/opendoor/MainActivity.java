@@ -349,14 +349,15 @@ public class MainActivity extends ListActivity {
     private void connectToBtDevice(String deviceName, BluetoothDevice device) {
     	mSelectedDevice = device;
     	mSelectedDeviceName = deviceName;
-    	if(mConnectThread != null){
-    		if(mConnectThread.getDevice() == mSelectedDevice){
-    			return;
-    		} else {
-    			mConnectThread.close();
-    		}
-    	}
-        if (mBluetoothAdapter.isEnabled()) {
+         if (mBluetoothAdapter.isEnabled()) {
+    	   	if(mConnectThread != null){
+        		if(mConnectThread.getDevice() == mSelectedDevice){
+        			return;
+        		} else {
+        			mConnectThread.close();
+        		}
+        	}
+
         	if(mBluetoothService != null){
 				mBluetoothService.cancel();
 				mBluetoothService = null;
