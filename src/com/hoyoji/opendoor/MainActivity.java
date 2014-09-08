@@ -52,6 +52,7 @@ public class MainActivity extends ListActivity {
 	private String mSelectedDeviceName;
 	
 	private BluetoothServiceThread mBluetoothService;
+	private ConnectThread mConnectThread;
 	
 	private TextView mTextViewStatus;
 	private EditText mEditTextPassword;
@@ -60,6 +61,7 @@ public class MainActivity extends ListActivity {
 	private Button mBtnOpen;
 //	private TextView mTextViewEmpty;
 	private TextView mTextViewFooter;
+	private boolean mIsClosingPreviousConnection = false;
 	
 	private ArrayList<String> mDevicesTitleArray = new ArrayList<String>();
 	private ArrayList<BluetoothDevice> mDevicesArray = new ArrayList<BluetoothDevice>();
@@ -110,7 +112,7 @@ public class MainActivity extends ListActivity {
 			}
 		});
 		
-		ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mDevicesTitleArray);
+		ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, mDevicesTitleArray);
         setListAdapter(adapter);
         
 //        mTextViewEmpty = (TextView)findViewById(android.R.id.empty);
@@ -136,6 +138,7 @@ public class MainActivity extends ListActivity {
 			}
 		});
 
+        getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		getListView().setFooterDividersEnabled(true);
         getListView().addFooterView(mTextViewFooter, null, false);
         
@@ -152,6 +155,8 @@ public class MainActivity extends ListActivity {
 	}
 	
 	private void issueCommand(Command command){
+		mEditTextPassword.setEnabled(false);
+		mEditTextPassword.setEnabled(true);
 		if(mSelectedDevice == null){
 			mTextViewStatus.setText("请选择要连接的设备。");
 			Toast.makeText(getApplicationContext(), "请选择要连接的设备。", Toast.LENGTH_SHORT).show();
@@ -263,7 +268,6 @@ public class MainActivity extends ListActivity {
 		}
 		
 	};
-	private ConnectThread mConnectThread;
 	
 	protected void discoverDevices() {
 		if (mBluetoothAdapter == null) {
@@ -317,6 +321,7 @@ public class MainActivity extends ListActivity {
     	BluetoothDevice selectedDevice = mDevicesArray.get(position);
     	String deviceName = ((TextView)v).getText().toString();
     	mCurrentCommand = null;
+//    	l.setItemChecked(position, true);
     	connectToBtDevice(deviceName, selectedDevice);
     }  
 	
@@ -354,7 +359,26 @@ public class MainActivity extends ListActivity {
         		if(mConnectThread.getDevice() == mSelectedDevice){
         			return;
         		} else {
+        			if(mIsClosingPreviousConnection ){
+        				return;
+        			}
+                	mTextViewStatus.setText("正在从设备断开连接...");
+        			mIsClosingPreviousConnection = true;
         			mConnectThread.close();
+        			this.mBtnClose.postDelayed(new Runnable(){
+						@Override
+						public void run() {
+							mIsClosingPreviousConnection = false;
+				        	if(mBluetoothService != null){
+								mBluetoothService.cancel();
+								mBluetoothService = null;
+				        	}
+				        	mConnectThread = new ConnectThread(mSelectedDeviceName, mSelectedDevice, mHandler);
+				        	mConnectThread.start();
+						}
+        				
+        			}, 5000);
+        			return;
         		}
         	}
 
@@ -362,7 +386,7 @@ public class MainActivity extends ListActivity {
 				mBluetoothService.cancel();
 				mBluetoothService = null;
         	}
-        	mConnectThread = new ConnectThread(deviceName, mSelectedDevice, mHandler);
+        	mConnectThread = new ConnectThread(mSelectedDeviceName, mSelectedDevice, mHandler);
         	mConnectThread.start();
         } else {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -450,7 +474,9 @@ public class MainActivity extends ListActivity {
     			mSocket = mDevice.createRfcommSocketToServiceRecord(MY_UUID);
     			mSocket.connect();
     		} catch (IOException connectException){
-                mHandler.obtainMessage(-1, -1, -1, "无法连接到设备：" + mDeviceName + "\n设备未开启或不在附近").sendToTarget();
+    			if(!mIsClosingPreviousConnection){
+    				mHandler.obtainMessage(-1, -1, -1, "无法连接到设备：" + mDeviceName + "\n设备未开启或不在附近\n").sendToTarget();
+    			}
     			try{
     				if(mSocket != null){
     					mSocket.close();
@@ -544,7 +570,16 @@ public class MainActivity extends ListActivity {
         /* Call this from the main activity to shutdown the connection */
         public void cancel() {
             try {
-            	mmSocket.close();
+            	if(mmInStream != null){
+            		mmInStream.close();
+            	}
+            	if(mmOutStream != null){
+            		mmOutStream.close();
+            	}
+            		
+        		if(mmSocket != null){
+        			mmSocket.close();
+        		}
             } catch (IOException e) { }
         }
     }
