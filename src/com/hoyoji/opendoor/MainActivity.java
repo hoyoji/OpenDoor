@@ -164,9 +164,7 @@ public class MainActivity extends ListActivity {
 		}
 		
 		String password = mEditTextPassword.getText().toString();
-		
 		if(password.length() == 4) {
-		
 			byte[] passwordBytes = new byte[4];
 			for(int i = 0; i < 4; i++){
 				if(password.charAt(i) < '0' || password.charAt(i) > '9'){
