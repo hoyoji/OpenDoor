@@ -1,4 +1,4 @@
-package com.hoyoji.opendoor;
+package com.hoyoji.btcontroller;
 
 public class Command {
 	
@@ -33,8 +33,21 @@ public class Command {
 		return strBuffer.toString();
 	}
 	
-	public void setPassword(byte[] password){
-		mPassword = password;
+	public void setPassword(byte[] password) throws Exception{
+		if(password.length == 4) {
+			byte[] passwordBytes = new byte[4];
+			for(int i = 0; i < 4; i++){
+				if(password[i] < '0' || password[i] > '9'){
+					throw new Exception("密码只能包含数字");
+				} else {
+					passwordBytes[i] = (byte) (password[i] - 48);
+				}
+			}
+			mPassword = passwordBytes;
+
+		} else {
+			throw new PasswordErrorException("请输入4位数的密码");
+		}
 	}
 	
 	public void setType(byte command){
@@ -57,5 +70,22 @@ public class Command {
 			case CMD_STOP : return "停止";
 			default : return "";
 		}
+	}
+
+	public byte[] getPassword() {
+		return mPassword;
+	}
+	
+	public static class PasswordErrorException extends Exception{
+
+		public PasswordErrorException(String string) {
+			super(string);
+		}
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -9119473625039929740L;
+		
 	}
 }
