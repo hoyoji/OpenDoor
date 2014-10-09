@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 
 import java.io.IOException;
 
@@ -68,22 +68,22 @@ public class Device  {
 	
 	
 	
-	protected void issueCommand(final Command command, final ConnectCallback callback){
+	protected void issueCommand(final Command command, final AsyncCallback callback){
 
 			try {
 				command.setPassword(mPassword.getBytes());
 			} catch (Exception e1) {
 				if(callback != null){
-					callback.connectError(e1);
+					callback.error(e1);
 					return;
 				}
 			}
 
 			if(mBluetoothService != null && mBluetoothService.isConnected()){
 				try {
-					mBluetoothService.write(command.toString().getBytes());
+					mBluetoothService.write(command.getBytes());
 					if(callback != null){
-						callback.connectSuccess(this);
+						callback.success(this);
 					}
 				} catch (IOException e) {
 //					if(callback != null){
@@ -92,41 +92,41 @@ public class Device  {
 					mBluetoothService.cancel();
 					mBluetoothService = null;
 					mCurrentCommand = command;
-					connect(new ConnectCallback(){
+					connect(new AsyncCallback(){
 						@Override
-						public void connectSuccess(Object object) {
+						public void success(Object object) {
 							if(callback != null){
-								callback.connectSuccess(object);
+								callback.success(object);
 							}
 						}
 						@Override
-						public void connectError(Exception errorMsg) {
+						public void error(Exception errorMsg) {
 							if(callback != null){
-								callback.connectError(errorMsg);
+								callback.error(errorMsg);
 							}
 						}
 					});
 				}
 			} else {
 				mCurrentCommand = command;
-				connect(new ConnectCallback(){
+				connect(new AsyncCallback(){
 					@Override
-					public void connectSuccess(Object object) {
+					public void success(Object object) {
 						if(callback != null){
-							callback.connectSuccess(object);
+							callback.success(object);
 						}
 					}
 					@Override
-					public void connectError(Exception errorMsg) {
+					public void error(Exception errorMsg) {
 						if(callback != null){
-							callback.connectError(errorMsg);
+							callback.error(errorMsg);
 						}
 					}
 				});
 			}
 	}
 	
-	public void connect(final ConnectCallback callback) {
+	public void connect(final AsyncCallback callback) {
 	    	if(mBluetoothService != null && mBluetoothService.isConnected()){
 	    		return;
 	    	}
@@ -134,27 +134,27 @@ public class Device  {
     	   	if(mConnectThread != null){
     	   		mConnectThread.close();
         	}
-        	mConnectThread = ConnectTask.newInstance(new ConnectCallback(){
+        	mConnectThread = ConnectTask.newInstance(new AsyncCallback(){
 				@Override
-				public void connectSuccess(Object thread) {
+				public void success(Object thread) {
 					mBluetoothService = (ConnectedThread)thread;
 //					if(callback != null){
 //						callback.connectSuccess(Device.this);
 //					}
 					if(mCurrentCommand != null){
-						issueCommand(mCurrentCommand, new ConnectCallback(){
+						issueCommand(mCurrentCommand, new AsyncCallback(){
 
 							@Override
-							public void connectSuccess(Object object) {
+							public void success(Object object) {
 								if(callback != null){
-									callback.connectSuccess(object);
+									callback.success(object);
 								}
 								mCurrentCommand = null;
 							}
 							@Override
-							public void connectError(Exception errorMsg) {
+							public void error(Exception errorMsg) {
 								if(callback != null){
-									callback.connectError(errorMsg);
+									callback.error(errorMsg);
 								}
 							}
 						});
@@ -162,10 +162,10 @@ public class Device  {
 				}
 
 				@Override
-				public void connectError(Exception errMsg) {
+				public void error(Exception errMsg) {
 					mConnectThread = null;
 					if(callback != null){
-						callback.connectError(errMsg);
+						callback.error(errMsg);
 					}
 				}
         	}, this);

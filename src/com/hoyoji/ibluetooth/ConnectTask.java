@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 
 import java.io.IOException;
 
@@ -10,10 +10,10 @@ import android.os.Build;
 public class ConnectTask extends AsyncTask<Object, Integer, Object>{
 	private BluetoothSocket mSocket;
 	private final Device mDevice;
-	ConnectCallback mCallbacks;
+	AsyncCallback mCallbacks;
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public static ConnectTask newInstance(ConnectCallback callbacks, Device device, String... params){
+	public static ConnectTask newInstance(AsyncCallback callbacks, Device device, String... params){
 		ConnectTask newTask = new ConnectTask(callbacks, device);
 		if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB){
 			newTask.execute(params);
@@ -23,7 +23,7 @@ public class ConnectTask extends AsyncTask<Object, Integer, Object>{
 		return newTask;
 	}
 	
-	public ConnectTask(ConnectCallback callbacks, Device device){
+	public ConnectTask(AsyncCallback callbacks, Device device){
 		mCallbacks = callbacks;
 		mDevice = device;
 	}
@@ -39,9 +39,9 @@ public class ConnectTask extends AsyncTask<Object, Integer, Object>{
     @Override
     protected void onPostExecute(Object object) {
     	if(object instanceof Exception){
-    		mCallbacks.connectError((Exception)object);
+    		mCallbacks.error((Exception)object);
     	} else {
-    		mCallbacks.connectSuccess(object);
+    		mCallbacks.success(object);
     	}
   }
 	

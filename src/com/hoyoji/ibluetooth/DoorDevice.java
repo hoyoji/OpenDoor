@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
@@ -8,20 +8,20 @@ public class DoorDevice extends Device {
 		super(name, btDevice, bluetoothAdapter);
 	}
 
-	public void open(ConnectCallback callback){
+	public void open(AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_OPEN);
 		issueCommand(command, callback);
 	}
 	
-	public void close(ConnectCallback callback){
+	public void close(AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_CLOSE);
 		issueCommand(command, callback);
 		
 	}
 	
-	public void stop(ConnectCallback callback){
+	public void stop(AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_STOP);
 		issueCommand(command, callback);

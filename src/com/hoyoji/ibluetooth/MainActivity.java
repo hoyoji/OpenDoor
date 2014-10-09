@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -23,7 +23,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.hoyoji.btcontroller.R;
+import com.hoyoji.ibluetooth.R;
 
 public class MainActivity extends ListActivity {
 
@@ -63,13 +63,13 @@ public class MainActivity extends ListActivity {
 				}
 				
 				mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
-				mSelectedDevice.open(new ConnectCallback(){
+				mSelectedDevice.open(new AsyncCallback(){
 					@Override
-					public void connectSuccess(Object device) {
+					public void success(Object device) {
 						Toast.makeText(getApplicationContext(), "开门指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
 					}
 					@Override
-					public void connectError(Exception errorMsg) {
+					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
@@ -94,13 +94,13 @@ public class MainActivity extends ListActivity {
 					return;
 				}
 				mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
-				mSelectedDevice.close(new ConnectCallback(){
+				mSelectedDevice.close(new AsyncCallback(){
 					@Override
-					public void connectSuccess(Object device) {
+					public void success(Object device) {
 						Toast.makeText(getApplicationContext(), "关门指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
 					}
 					@Override
-					public void connectError(Exception errorMsg) {
+					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
@@ -125,13 +125,13 @@ public class MainActivity extends ListActivity {
 					return;
 				}
 				mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
-				mSelectedDevice.stop(new ConnectCallback(){
+				mSelectedDevice.stop(new AsyncCallback(){
 					@Override
-					public void connectSuccess(Object device) {
+					public void success(Object device) {
 						Toast.makeText(getApplicationContext(), "停止指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
 					}
 					@Override
-					public void connectError(Exception errorMsg) {
+					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
@@ -273,20 +273,20 @@ public class MainActivity extends ListActivity {
     	mEditTextPassword.setText(mSelectedDevice.getPassword());
 
         if (mBluetoothAdapter.isEnabled()) {
-    		mSelectedDevice.connect(new ConnectCallback(){
-				@Override
-				public void connectSuccess(Object device) {
-					mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
-					Toast.makeText(getApplicationContext(), "已成功连接到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
-				}
-				@Override
-				public void connectError(Exception errorMsg) {
-					Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
-				}
-    		});
+//    		mSelectedDevice.connect(new ConnectCallback(){
+//				@Override
+//				public void connectSuccess(Object device) {
+//					mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
+//					Toast.makeText(getApplicationContext(), "已成功连接到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+//				}
+//				@Override
+//				public void connectError(Exception errorMsg) {
+//					Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
+//				}
+//    		});
     	} else {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_CONNECT_DEVICE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 //        	mTextViewStatus.setText("正在连接到设备: " + mSelectedDevice.getName());
 //			Toast.makeText(getApplicationContext(), "正在连接到设备: " + mSelectedDevice.getName(), Toast.LENGTH_SHORT).show();
     	}
@@ -304,9 +304,9 @@ public class MainActivity extends ListActivity {
 	        }
     	} else if(requestCode == REQUEST_CONNECT_DEVICE){
 	        if(resultCode == RESULT_OK) {
-	        	mSelectedDevice.connect(new ConnectCallback(){
+	        	mSelectedDevice.connect(new AsyncCallback(){
 					@Override
-					public void connectSuccess(Object device) {
+					public void success(Object device) {
 						mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 						if(mSelectedDevice.getCurrentCommand() != null){
 							Toast.makeText(getApplicationContext(), mSelectedDevice.getCurrentCommand().getTypeName() + "指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
@@ -315,7 +315,7 @@ public class MainActivity extends ListActivity {
 						}
 					}
 					@Override
-					public void connectError(Exception errorMsg) {
+					public void error(Exception errorMsg) {
 						Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 					}
 	    			

@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 
 public class Command {
 	
@@ -13,26 +13,54 @@ public class Command {
 	private final static byte TAILING = (byte)0xAA;
 	
 	
-	byte mCommand;
-	byte[] mPassword;
-	byte[] mData = {};
+	private byte mCommand;
+	private byte[] mPassword;
+	private byte[] mData = {};
 	
 	public Command(){
 		
 	}
 	
-	public String toString(){
-		StringBuffer strBuffer = new StringBuffer();
-		strBuffer.append(HEADING);
-		strBuffer.append(mCommand);
-		strBuffer.append((byte)(mData.length + 9));
-		strBuffer.append(mPassword);
-		strBuffer.append(mData);
-		strBuffer.append(TAILING);
+//	public String toString(){
+//		StringBuffer strBuffer = new StringBuffer();
+//		strBuffer.append(HEADING);
+//		strBuffer.append(mCommand);
+//		strBuffer.append((byte)(mData.length + 9));
+//		strBuffer.append(mPassword);
+//		strBuffer.append(mData);
+//		strBuffer.append(TAILING);
+//		
+//		return strBuffer.toString();
+//	}
+	
+	public byte[] getBytes(){
+		byte[] buffer = new byte[mData.length + 10];
+		buffer[0] = HEADING[0];
+		buffer[1] = HEADING[1];
+		buffer[2] = (byte)buffer.length;
+		buffer[3] = mCommand;
+		buffer[4] = mPassword[0];
+		buffer[5] = mPassword[1];
+		buffer[6] = mPassword[2];
+		buffer[7] = mPassword[3];
+		buffer[buffer.length-1] = TAILING;
+		for(int i = 0; i < mData.length; i++){
+			buffer[8+i] = mData[i];
+		}
+		buffer[buffer.length-2] = checkSum(buffer);
 		
-		return strBuffer.toString();
+//		buffer = {(byte)0xA5, (byte)0x5A, (byte)0x08, (byte)0x02, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0x03, (byte)0x09, (byte)0xAA};
+		return buffer;
 	}
 	
+	private byte checkSum(byte[] buffer) {
+		int sum = 0;
+		for(int i = 2; i < mData.length-2; i++){
+			sum += buffer[i];
+		}
+		return (byte) (sum % 256);
+	}
+
 	public void setPassword(byte[] password) throws Exception{
 		if(password.length == 4) {
 			byte[] passwordBytes = new byte[4];

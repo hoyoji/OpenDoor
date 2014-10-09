@@ -1,4 +1,4 @@
-package com.hoyoji.btcontroller;
+package com.hoyoji.ibluetooth;
 
 import java.io.IOException;
 import java.io.InputStream;
