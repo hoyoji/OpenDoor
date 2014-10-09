@@ -13,8 +13,8 @@ public class Device  {
 	private String mName;
 	private BluetoothDevice mBtDevice;
 	private String mPassword;
-	private ConnectedThread mBluetoothService;
-	private ConnectTask mConnectThread;
+	private ConnectedThread mConnectedThread;
+	private ConnectTask mConnectTask;
 	private Command mCurrentCommand;
 //	private boolean mIsClosingPreviousConnection = false;
 	private boolean mIsRememberPassword = false;
@@ -79,12 +79,12 @@ public class Device  {
 				}
 			}
 
-			if(mBluetoothService != null && mBluetoothService.isConnected()){
+			if(mConnectedThread != null && mConnectedThread.isConnected()){
 				try {
 					if(callback != null){
 						callback.progress("正在发送命令 " + command.getTypeName() + " 到设备: " + getName() + "...");
 					}
-					mBluetoothService.write(command.getBytes());
+					mConnectedThread.write(command.getBytes());
 					if(callback != null){
 						callback.success(this);
 					}
@@ -111,6 +111,12 @@ public class Device  {
 						mCurrentCommand = null;
 					}
 					@Override
+					public void progress(String msg){
+						if(callback != null){
+							callback.progress(msg);
+						}
+					}
+					@Override
 					public void error(Exception errorMsg) {
 						if(callback != null){
 							callback.error(errorMsg);
@@ -124,25 +130,32 @@ public class Device  {
 					callback.error(errorMsg);
 				}
 			}
+			@Override
+			public void progress(String progressMsg) {
+				if(callback != null){
+					callback.progress(progressMsg);
+				}
+				
+			}
 		});
 	}
 	
 	public void connect(final AsyncCallback callback) {
-	    	if(mBluetoothService != null && mBluetoothService.isConnected()){
+	    	if(mConnectedThread != null && mConnectedThread.isConnected()){
 	    		return;
 	    	}
-	    	mBluetoothService = null;
-    	   	if(mConnectThread != null){
-    	   		mConnectThread.close();
+	    	mConnectedThread = null;
+    	   	if(mConnectTask != null){
+    	   		mConnectTask.close();
         	}
 
 			if(callback != null){
 				callback.progress("正在连接到设备: " + getName() + " ...");
 			}
-        	mConnectThread = ConnectTask.newInstance(new AsyncCallback(){
+        	mConnectTask = ConnectTask.newInstance(new AsyncCallback(){
 				@Override
 				public void success(Object thread) {
-					mBluetoothService = (ConnectedThread)thread;
+					mConnectedThread = (ConnectedThread)thread;
 
 					if(callback != null){
 						callback.success(this);
@@ -151,27 +164,35 @@ public class Device  {
 
 				@Override
 				public void error(Exception errMsg) {
-					mConnectThread = null;
+					mConnectTask = null;
 					if(callback != null){
 						callback.error(errMsg);
 					}
+				}
+
+				@Override
+				public void progress(String progressMsg) {
+					if(callback != null){
+						callback.progress(progressMsg);
+					}
+					
 				}
         	}, this);
     }
 	
 	public void disconnect(AsyncCallback object) {	    	
-		if(mConnectThread != null){
-	   		mConnectThread.close();
-	   		mConnectThread = null;
+		if(mConnectTask != null){
+	   		mConnectTask.close();
+	   		mConnectTask = null;
 		}
-		if(mBluetoothService != null){
-			 mBluetoothService.cancel();
-			 mBluetoothService = null;
+		if(mConnectedThread != null){
+			 mConnectedThread.cancel();
+			 mConnectedThread = null;
 		}
 	}
 
 	public void waitForResponse(AsyncCallback asyncCallback) {
-		if(mBluetoothService == null || !mBluetoothService.isConnected()){
+		if(mConnectedThread == null || !mConnectedThread.isConnected()){
 			if(asyncCallback != null){
 				Exception errorException = new Exception("尚未连接到设备: " + getName());
 				asyncCallback.error(errorException);
@@ -180,7 +201,7 @@ public class Device  {
 			if(asyncCallback != null){
 				asyncCallback.progress("正在等待设备回复...");
 			}
-			mBluetoothService.readResponse(asyncCallback);
+			mConnectedThread.readResponse(asyncCallback);
 		}
 		
 	}
