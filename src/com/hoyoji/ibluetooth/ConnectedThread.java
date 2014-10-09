@@ -36,7 +36,7 @@ public class ConnectedThread extends Thread {
         int bytes; // bytes returned from read()
 
         // Keep listening to the InputStream until an exception occurs
-        while (true) {
+        while (mmSocket.isConnected()) {
             try {
                 // Read from the InputStream
                 bytes = mmInStream.read(buffer);

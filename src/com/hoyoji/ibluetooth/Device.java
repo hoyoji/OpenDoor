@@ -143,6 +143,10 @@ public class Device  {
 				@Override
 				public void success(Object thread) {
 					mBluetoothService = (ConnectedThread)thread;
+
+					if(callback != null){
+						callback.success(this);
+					}
 				}
 
 				@Override
