@@ -61,16 +61,22 @@ public class MainActivity extends ListActivity {
 					Toast.makeText(getApplicationContext(), "请先选择一个设备！", Toast.LENGTH_SHORT).show();
 					return;
 				}
-				
+				mBtnOpen.setEnabled(false);
 				mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 				mSelectedDevice.open(new AsyncCallback(){
 					@Override
 					public void success(Object device) {
 						Toast.makeText(getApplicationContext(), "开门指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+						mBtnOpen.setEnabled(true);
+					}
+					@Override
+					public void progress(String msg){
+						Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 					}
 					@Override
 					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
+							mEditTextPassword.setError(errorMsg.getMessage());
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
 							if (mBluetoothAdapter.isEnabled()) {
@@ -80,6 +86,7 @@ public class MainActivity extends ListActivity {
 					            startActivityForResult(enableBtIntent, REQUEST_CONNECT_DEVICE);
 					    	}
 						}
+						mBtnOpen.setEnabled(true);
 					}
 	    			
 	    		});
@@ -102,6 +109,7 @@ public class MainActivity extends ListActivity {
 					@Override
 					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
+							mEditTextPassword.setError(errorMsg.getMessage());
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
 							if (mBluetoothAdapter.isEnabled()) {
@@ -133,6 +141,7 @@ public class MainActivity extends ListActivity {
 					@Override
 					public void error(Exception errorMsg) {
 						if(errorMsg instanceof Command.PasswordErrorException){
+							mEditTextPassword.setError(errorMsg.getMessage());
 							Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 						} else {
 							if (mBluetoothAdapter.isEnabled()) {
@@ -311,7 +320,8 @@ public class MainActivity extends ListActivity {
 						if(mSelectedDevice.getCurrentCommand() != null){
 							Toast.makeText(getApplicationContext(), mSelectedDevice.getCurrentCommand().getTypeName() + "指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
 						} else {
-							Toast.makeText(getApplicationContext(), "已成功连接到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+							mSelectedDevice.disconnect(null);
+//							Toast.makeText(getApplicationContext(), "已成功连接到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
 						}
 					}
 					@Override

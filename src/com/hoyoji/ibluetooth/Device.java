@@ -81,40 +81,34 @@ public class Device  {
 
 			if(mBluetoothService != null && mBluetoothService.isConnected()){
 				try {
+					if(callback != null){
+						callback.progress("正在发送命令 " + command.getTypeName() + " 到设备: " + getName() + "...");
+					}
 					mBluetoothService.write(command.getBytes());
 					if(callback != null){
 						callback.success(this);
 					}
 				} catch (IOException e) {
-//					if(callback != null){
-//						callback.connectError(e.getMessage());
-//					}
-					mBluetoothService.cancel();
-					mBluetoothService = null;
-					mCurrentCommand = command;
-					connect(new AsyncCallback(){
-						@Override
-						public void success(Object object) {
-							if(callback != null){
-								callback.success(object);
-							}
-						}
-						@Override
-						public void error(Exception errorMsg) {
-							if(callback != null){
-								callback.error(errorMsg);
-							}
-						}
-					});
+					disconnect(null);
+					connectAndIssueCommand(command, callback);
 				}
 			} else {
-				mCurrentCommand = command;
-				connect(new AsyncCallback(){
+				connectAndIssueCommand(command, callback);
+			}
+	}
+	
+	private void connectAndIssueCommand(Command command, final AsyncCallback callback){
+		mCurrentCommand = command;
+		connect(new AsyncCallback(){
+			@Override
+			public void success(Object object) {
+				issueCommand(mCurrentCommand, new AsyncCallback(){
 					@Override
 					public void success(Object object) {
 						if(callback != null){
 							callback.success(object);
 						}
+						mCurrentCommand = null;
 					}
 					@Override
 					public void error(Exception errorMsg) {
@@ -124,6 +118,13 @@ public class Device  {
 					}
 				});
 			}
+			@Override
+			public void error(Exception errorMsg) {
+				if(callback != null){
+					callback.error(errorMsg);
+				}
+			}
+		});
 	}
 	
 	public void connect(final AsyncCallback callback) {
@@ -134,31 +135,14 @@ public class Device  {
     	   	if(mConnectThread != null){
     	   		mConnectThread.close();
         	}
+
+			if(callback != null){
+				callback.progress("正在连接到设备: " + getName() + " ...");
+			}
         	mConnectThread = ConnectTask.newInstance(new AsyncCallback(){
 				@Override
 				public void success(Object thread) {
 					mBluetoothService = (ConnectedThread)thread;
-//					if(callback != null){
-//						callback.connectSuccess(Device.this);
-//					}
-					if(mCurrentCommand != null){
-						issueCommand(mCurrentCommand, new AsyncCallback(){
-
-							@Override
-							public void success(Object object) {
-								if(callback != null){
-									callback.success(object);
-								}
-								mCurrentCommand = null;
-							}
-							@Override
-							public void error(Exception errorMsg) {
-								if(callback != null){
-									callback.error(errorMsg);
-								}
-							}
-						});
-					}
 				}
 
 				@Override
@@ -170,4 +154,30 @@ public class Device  {
 				}
         	}, this);
     }
+	
+	public void disconnect(AsyncCallback object) {	    	
+		if(mConnectThread != null){
+	   		mConnectThread.close();
+	   		mConnectThread = null;
+		}
+		if(mBluetoothService != null){
+			 mBluetoothService.cancel();
+			 mBluetoothService = null;
+		}
+	}
+
+	public void waitForResponse(AsyncCallback asyncCallback) {
+		if(mBluetoothService == null || !mBluetoothService.isConnected()){
+			if(asyncCallback != null){
+				Exception errorException = new Exception("尚未连接到设备: " + getName());
+				asyncCallback.error(errorException);
+			}
+		} else {
+			if(asyncCallback != null){
+				asyncCallback.progress("正在等待设备回复...");
+			}
+			mBluetoothService.readResponse(asyncCallback);
+		}
+		
+	}
 }
