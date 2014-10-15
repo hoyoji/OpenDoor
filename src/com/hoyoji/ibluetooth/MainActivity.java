@@ -129,25 +129,25 @@ public class MainActivity extends ListActivity {
     	}
 		
 		if(mSelectedDevice == null){
-			ToastUtils.showMessage(getApplicationContext(), "请先选择一个设备！");
+			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
 		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.stop(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": 停止指令已发送");
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": 停止指令已发送");
 			}
 			@Override
 			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				}
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
 			}
 			@Override
 			public void progress(Device device, String progressMsg) {
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + progressMsg);
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + progressMsg);
 			}
 			
 		});
@@ -167,25 +167,25 @@ public class MainActivity extends ListActivity {
     	}
 		
 		if(mSelectedDevice == null){
-			ToastUtils.showMessage(getApplicationContext(), "请先选择一个设备！");
+			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
 		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.close(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": 关门指令已发送");
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": 关门指令已发送");
 			}
 			@Override
 			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				}
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
 			}
 			@Override
 			public void progress(Device device, String progressMsg) {
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + progressMsg);
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + progressMsg);
 				
 			}
 			
@@ -206,7 +206,7 @@ public class MainActivity extends ListActivity {
     	}
 
 		if(mSelectedDevice == null){
-			ToastUtils.showMessage(getApplicationContext(), "请先选择一个设备！");
+			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
 		
@@ -214,19 +214,19 @@ public class MainActivity extends ListActivity {
 		mSelectedDevice.open(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": 开门指令已发送");
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": 开门指令已发送");
 				mBtnOpen.setEnabled(true);
 			}
 			@Override
 			public void progress(Device device, String msg){
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + msg);
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + msg);
 			}
 			@Override
 			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				} 
-				ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
+				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
 			}
 		});
 	}
@@ -304,7 +304,7 @@ public class MainActivity extends ListActivity {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 //            	mTextViewStatus.setText("正在开启蓝牙...");
-                ToastUtils.showMessage(getApplicationContext(), "正在开启蓝牙...");
+                ToastUtils.showMessageLong(getApplicationContext(), "正在开启蓝牙...");
             }
         }
 		
@@ -314,12 +314,12 @@ public class MainActivity extends ListActivity {
 		@Override
 		public void success(Device device, Object response) {
 			Command command = (Command)response;
-			ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + device.getTypeName(command) + " 指令已送达");
+			ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + device.getTypeName(command) + " 指令已送达");
 		}
 		
 		@Override
 		public void progress(Device device, String msg){
-			ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + msg);
+			ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + msg);
 		}
 		
 		@Override
@@ -327,7 +327,7 @@ public class MainActivity extends ListActivity {
 			if(errorException instanceof Command.PasswordErrorException){
 				mEditTextPassword.setError(errorException.getMessage());
 			} 
-			ToastUtils.showMessage(getApplicationContext(), device.getName() + ": " + errorException.getMessage());
+			ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorException.getMessage());
 		}
 	};
 
@@ -355,18 +355,18 @@ public class MainActivity extends ListActivity {
 //				@Override
 //				public void connectSuccess(Object device) {
 //					mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
-//					ToastUtils.showMessage(getApplicationContext(), "已成功连接到设备: " + device.getName());
+//					ToastUtils.showMessageLong(getApplicationContext(), "已成功连接到设备: " + device.getName());
 //				}
 //				@Override
 //				public void connectError(Exception errorMsg) {
-//					ToastUtils.showMessage(getApplicationContext(), errorMsg.getMessage());
+//					ToastUtils.showMessageLong(getApplicationContext(), errorMsg.getMessage());
 //				}
 //    		});
     	} else {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 //        	mTextViewStatus.setText("正在连接到设备: " + mSelectedDevice.getName());
-//			ToastUtils.showMessage(getApplicationContext(), "正在连接到设备: " + mSelectedDevice.getName());
+//			ToastUtils.showMessageLong(getApplicationContext(), "正在连接到设备: " + mSelectedDevice.getName());
     	}
     }  
 	
@@ -386,7 +386,7 @@ public class MainActivity extends ListActivity {
 	        	} 
 	        } else {
 //	        	mTextViewStatus.setText("请开启蓝牙后再尝试连接！");
-	        	ToastUtils.showMessage(getApplicationContext(), "请开启蓝牙！");
+	        	ToastUtils.showMessageLong(getApplicationContext(), "请开启蓝牙！");
 	        }
     	} 
 //    	else if(requestCode == REQUEST_CONNECT_DEVICE){
@@ -396,26 +396,26 @@ public class MainActivity extends ListActivity {
 //					public void success(Object device) {
 //						mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 //						if(mSelectedDevice.getCurrentCommand() != null){
-//							ToastUtils.showMessage(getApplicationContext(), mSelectedDevice.getCurrentCommand().getTypeName() + "指令已发送到设备: " + device.getName());
+//							ToastUtils.showMessageLong(getApplicationContext(), mSelectedDevice.getCurrentCommand().getTypeName() + "指令已发送到设备: " + device.getName());
 //						} else {
 //							mSelectedDevice.disconnect(null);
-////							ToastUtils.showMessage(getApplicationContext(), "已成功连接到设备: " + device.getName());
+////							ToastUtils.showMessageLong(getApplicationContext(), "已成功连接到设备: " + device.getName());
 //						}
 //					}
 //					@Override
 //					public void error(Exception errorMsg) {
-//						ToastUtils.showMessage(getApplicationContext(), errorMsg.getMessage());
+//						ToastUtils.showMessageLong(getApplicationContext(), errorMsg.getMessage());
 //					}
 //					@Override
 //					public void progress(String progressMsg) {
-//						ToastUtils.showMessage(getApplicationContext(), progressMsg);
+//						ToastUtils.showMessageLong(getApplicationContext(), progressMsg);
 //						
 //					}
 //	    			
 //	    		});
 //	        } else {
 ////	        	mTextViewStatus.setText("请开启蓝牙后再尝试连接！");
-//				ToastUtils.showMessage(getApplicationContext(), "请开启蓝牙后再尝试连接！");
+//				ToastUtils.showMessageLong(getApplicationContext(), "请开启蓝牙后再尝试连接！");
 //	        }
 //    	}
     }

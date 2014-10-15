@@ -176,7 +176,9 @@ public class Device  {
 					mConnectedThread.setResponseCallback(new AsyncCallback(){
 						@Override
 						public void success(Device device, Object data) {
-							mPendingCommandCount--;
+							if(mPendingCommandCount > 0){
+								mPendingCommandCount--;
+							}
 							if(mPendingCommandCount == 0){
 								disconnect(mResponseCallback);
 							}
@@ -189,9 +191,10 @@ public class Device  {
 				
 						@Override
 						public void error(Device device, Exception errorException) {
-							if(mResponseCallback != null){
-								mResponseCallback.error(Device.this, errorException);
-							}
+							mPendingCommandCount = 0;
+//							if(mResponseCallback != null){
+//								mResponseCallback.error(Device.this, errorException);
+//							}
 						}
 				
 						@Override
