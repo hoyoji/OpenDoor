@@ -11,166 +11,20 @@ public class DoorDevice extends Device {
 	public void open(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_OPEN);
-		issueCommand(command, new AsyncCallback(){
-			@Override
-			public void success(final Object device) {
-				waitForResponse(new AsyncCallback(){
-					@Override
-					public void success(Object response) {						
-						disconnect(null);
-						Response resp = (Response)response;
-						if(callback != null){
-							if(resp.getType() == Command.CMD_OPEN){
-								callback.success(DoorDevice.this);
-							} else {
-								Exception errorException = new Exception("设备回复错误，开门可能未成功。");
-								callback.error(errorException );
-							}
-						}
-					}
-					@Override
-					public void progress(String msg){
-						if(callback != null){
-							callback.progress(msg);
-						}
-					}
-					@Override
-					public void error(Exception errorException) {
-						disconnect(null);
-						if(callback != null){
-							callback.error(errorException);
-						}
-					}
-				});
-			}
-
-			@Override
-			public void error(Exception errorException) {
-				disconnect(null);
-				if(callback != null){
-					callback.error(errorException);
-				}
-			}
-
-			@Override
-			public void progress(String progressMsg) {
-				if(callback != null){
-					callback.progress(progressMsg);
-				}
-				
-			}
-			
-		});
+		issueCommand(command, callback);
 	}
 	
 	public void close(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_CLOSE);
-		issueCommand(command, new AsyncCallback(){
-			@Override
-			public void success(final Object device) {
-				waitForResponse(new AsyncCallback(){
-					@Override
-					public void success(Object response) {						
-						disconnect(null);
-						Response resp = (Response)response;
-						if(callback != null){
-							if(resp.getType() == Command.CMD_OPEN){
-								callback.success(DoorDevice.this);
-							} else {
-								Exception errorException = new Exception("设备回复错误，关门可能未成功。");
-								callback.error(errorException );
-							}
-						}
-					}
-					@Override
-					public void progress(String msg){
-						if(callback != null){
-							callback.progress(msg);
-						}
-					}
-					@Override
-					public void error(Exception errorException) {
-						disconnect(null);
-						if(callback != null){
-							callback.error(errorException);
-						}
-					}
-				});
-			}
-
-			@Override
-			public void error(Exception errorException) {
-				disconnect(null);
-				if(callback != null){
-					callback.error(errorException);
-				}
-			}
-
-			@Override
-			public void progress(String progressMsg) {
-				if(callback != null){
-					callback.progress(progressMsg);
-				}
-				
-			}
-			
-		});
+		issueCommand(command, callback);
 		
 	}
 	
 	public void stop(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Command.CMD_STOP);
-		issueCommand(command, new AsyncCallback(){
-			@Override
-			public void success(final Object device) {
-				waitForResponse(new AsyncCallback(){
-					@Override
-					public void success(Object response) {						
-						disconnect(null);
-						Response resp = (Response)response;
-						if(callback != null){
-							if(resp.getType() == Command.CMD_OPEN){
-								callback.success(DoorDevice.this);
-							} else {
-								Exception errorException = new Exception("设备回复错误，停止可能未成功。");
-								callback.error(errorException );
-							}
-						}
-					}
-					@Override
-					public void progress(String msg){
-						if(callback != null){
-							callback.progress(msg);
-						}
-					}
-					@Override
-					public void error(Exception errorException) {
-						disconnect(null);
-						if(callback != null){
-							callback.error(errorException);
-						}
-					}
-				});
-			}
-
-			@Override
-			public void error(Exception errorException) {
-				disconnect(null);
-				if(callback != null){
-					callback.error(errorException);
-				}
-			}
-
-			@Override
-			public void progress(String progressMsg) {
-				if(callback != null){
-					callback.progress(progressMsg);
-				}
-			}
-			
-		});
+		issueCommand(command, callback);
 	}
 
 

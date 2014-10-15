@@ -39,9 +39,9 @@ public class ConnectTask extends AsyncTask<Object, Integer, Object>{
     @Override
     protected void onPostExecute(Object object) {
     	if(object instanceof Exception){
-    		mCallbacks.error((Exception)object);
+    		mCallbacks.error(mDevice, (Exception)object);
     	} else {
-    		mCallbacks.success(object);
+    		mCallbacks.success(mDevice, object);
     	}
   }
 	

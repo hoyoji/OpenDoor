@@ -48,7 +48,7 @@ public class ConnectedThread extends Thread {
         			Handler handler = new Handler(Looper.getMainLooper());
 					handler.post(new Runnable() {
 						public void run() {
-		                	mCallbackResponse.success(resp);
+		                	mCallbackResponse.success(null, resp);
 		                }
 		            });
                 }
@@ -57,7 +57,7 @@ public class ConnectedThread extends Thread {
 	            	Handler handler = new Handler(Looper.getMainLooper());
 					handler.post(new Runnable() {
 						public void run() {
-			            	mCallbackResponse.error(e);
+			            	mCallbackResponse.error(null, e);
 		                }
 		            });
                 }
@@ -75,7 +75,7 @@ public class ConnectedThread extends Thread {
             mmOutStream.write(bytes);
     }
     
-    public void readResponse(AsyncCallback callback){
+    public void setResponseCallback(AsyncCallback callback){
     	mCallbackResponse = callback;
     }
 

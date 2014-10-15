@@ -74,7 +74,7 @@ public class Device  {
 				command.setPassword(mPassword.getBytes());
 			} catch (Exception e1) {
 				if(callback != null){
-					callback.error(e1);
+					callback.error(this, e1);
 					return;
 				}
 			}
@@ -82,11 +82,11 @@ public class Device  {
 			if(mConnectedThread != null && mConnectedThread.isConnected()){
 				try {
 					if(callback != null){
-						callback.progress("正在发送命令 " + command.getTypeName() + " 到设备: " + getName() + "...");
+						callback.progress(this, "正在发送命令 " + command.getTypeName() + " 到设备: " + getName() + "...");
 					}
 					mConnectedThread.write(command.getBytes());
 					if(callback != null){
-						callback.success(this);
+						callback.success(this, command);
 					}
 				} catch (IOException e) {
 					disconnect(null);
@@ -101,39 +101,39 @@ public class Device  {
 		mCurrentCommand = command;
 		connect(new AsyncCallback(){
 			@Override
-			public void success(Object object) {
+			public void success(Device device, Object object) {
 				issueCommand(mCurrentCommand, new AsyncCallback(){
 					@Override
-					public void success(Object object) {
+					public void success(Device device, Object object) {
 						if(callback != null){
-							callback.success(object);
+							callback.success(device, object);
 						}
 						mCurrentCommand = null;
 					}
 					@Override
-					public void progress(String msg){
+					public void progress(Device device, String msg){
 						if(callback != null){
-							callback.progress(msg);
+							callback.progress(device, msg);
 						}
 					}
 					@Override
-					public void error(Exception errorMsg) {
+					public void error(Device device, Exception errorMsg) {
 						if(callback != null){
-							callback.error(errorMsg);
+							callback.error(device, errorMsg);
 						}
 					}
 				});
 			}
 			@Override
-			public void error(Exception errorMsg) {
+			public void error(Device device, Exception errorMsg) {
 				if(callback != null){
-					callback.error(errorMsg);
+					callback.error(device, errorMsg);
 				}
 			}
 			@Override
-			public void progress(String progressMsg) {
+			public void progress(Device device, String progressMsg) {
 				if(callback != null){
-					callback.progress(progressMsg);
+					callback.progress(device, progressMsg);
 				}
 				
 			}
@@ -150,30 +150,30 @@ public class Device  {
         	}
 
 			if(callback != null){
-				callback.progress("正在连接到设备: " + getName() + " ...");
+				callback.progress(this, "正在连接到设备: " + getName() + " ...");
 			}
         	mConnectTask = ConnectTask.newInstance(new AsyncCallback(){
 				@Override
-				public void success(Object thread) {
+				public void success(Device device, Object thread) {
 					mConnectedThread = (ConnectedThread)thread;
 
 					if(callback != null){
-						callback.success(this);
+						callback.success(device, thread);
 					}
 				}
 
 				@Override
-				public void error(Exception errMsg) {
+				public void error(Device device, Exception errMsg) {
 					mConnectTask = null;
 					if(callback != null){
-						callback.error(errMsg);
+						callback.error(device, errMsg);
 					}
 				}
 
 				@Override
-				public void progress(String progressMsg) {
+				public void progress(Device device, String progressMsg) {
 					if(callback != null){
-						callback.progress(progressMsg);
+						callback.progress(device, progressMsg);
 					}
 					
 				}
@@ -191,17 +191,39 @@ public class Device  {
 		}
 	}
 
-	public void waitForResponse(AsyncCallback asyncCallback) {
+	public void setResponseCallback(final AsyncCallback asyncCallback) {
 		if(mConnectedThread == null || !mConnectedThread.isConnected()){
 			if(asyncCallback != null){
 				Exception errorException = new Exception("尚未连接到设备: " + getName());
-				asyncCallback.error(errorException);
+				asyncCallback.error(this, errorException);
 			}
 		} else {
 			if(asyncCallback != null){
-				asyncCallback.progress("正在等待设备回复...");
+				asyncCallback.progress(this, "正在等待设备回复...");
 			}
-			mConnectedThread.readResponse(asyncCallback);
+			mConnectedThread.setResponseCallback(new AsyncCallback(){
+				@Override
+				public void success(Device device, Object data) {
+					if(asyncCallback != null){
+						asyncCallback.success(Device.this, data);
+					}
+				}
+
+				@Override
+				public void error(Device device, Exception errorException) {
+					if(asyncCallback != null){
+						asyncCallback.success(Device.this, errorException);
+					}
+				}
+
+				@Override
+				public void progress(Device device, String progressMsg) {
+					if(asyncCallback != null){
+						asyncCallback.success(Device.this, progressMsg);
+					}
+				}
+				
+			});
 		}
 		
 	}

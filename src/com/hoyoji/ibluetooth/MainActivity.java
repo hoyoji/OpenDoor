@@ -135,20 +135,19 @@ public class MainActivity extends ListActivity {
 		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.stop(new AsyncCallback(){
 			@Override
-			public void success(Object device) {
-				Toast.makeText(getApplicationContext(), "停止指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+			public void success(Device device, Object data) {
+				Toast.makeText(getApplicationContext(), "停止指令已发送给设备: " + device.getName(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			public void error(Exception errorMsg) {
+			public void error(Device devcie, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				}
 				Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			public void progress(String progressMsg) {
+			public void progress(Device device, String progressMsg) {
 				Toast.makeText(getApplicationContext(), progressMsg, Toast.LENGTH_SHORT).show();
-				
 			}
 			
 		});
@@ -174,18 +173,18 @@ public class MainActivity extends ListActivity {
 		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.close(new AsyncCallback(){
 			@Override
-			public void success(Object device) {
-				Toast.makeText(getApplicationContext(), "关门指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+			public void success(Device device, Object data) {
+				Toast.makeText(getApplicationContext(), "关门指令已发送给设备: " + device.getName(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			public void error(Exception errorMsg) {
+			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				}
 				Toast.makeText(getApplicationContext(), errorMsg.getMessage(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			public void progress(String progressMsg) {
+			public void progress(Device device, String progressMsg) {
 				Toast.makeText(getApplicationContext(), progressMsg, Toast.LENGTH_SHORT).show();
 				
 			}
@@ -214,16 +213,16 @@ public class MainActivity extends ListActivity {
 		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.open(new AsyncCallback(){
 			@Override
-			public void success(Object device) {
-				Toast.makeText(getApplicationContext(), "开门指令已发送到设备: " + ((Device)device).getName(), Toast.LENGTH_SHORT).show();
+			public void success(Device device, Object data) {
+				Toast.makeText(getApplicationContext(), "开门指令已发送给设备: " + device.getName(), Toast.LENGTH_SHORT).show();
 				mBtnOpen.setEnabled(true);
 			}
 			@Override
-			public void progress(String msg){
+			public void progress(Device device, String msg){
 				Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			public void error(Exception errorMsg) {
+			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
 					mEditTextPassword.setError(errorMsg.getMessage());
 				} 
@@ -240,7 +239,7 @@ public class MainActivity extends ListActivity {
 		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 		if(pairedDevices.size() > 0){
 			for(BluetoothDevice btDevice : pairedDevices){
-				mDevicesArray.add(new DoorDevice(btDevice.getName(), btDevice, mBluetoothAdapter));
+				mDevicesArray.add(createDoorDevcie(btDevice.getName(), btDevice, mBluetoothAdapter));
 			}
 			((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
 		}
@@ -267,7 +266,7 @@ public class MainActivity extends ListActivity {
 					}
 					return;
 				}
-				mDevicesArray.add(new DoorDevice(device.getName(), device, mBluetoothAdapter));
+				mDevicesArray.add(createDoorDevcie(device.getName(), device, mBluetoothAdapter));
 				
 				((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
 			}
@@ -311,6 +310,34 @@ public class MainActivity extends ListActivity {
 		
 	}
 	
+	private AsyncCallback mDoorDeviceCallback = new AsyncCallback(){
+		@Override
+		public void success(Device device, Object response) {
+			Response resp = (Response)response;
+			Toast.makeText(getApplicationContext(), device.getName() + ": " + resp.getTypeName() + " 指令已送达", Toast.LENGTH_SHORT).show();
+		}
+		
+		@Override
+		public void progress(Device device, String msg){
+			Toast.makeText(getApplicationContext(), device.getName() + ": " + msg, Toast.LENGTH_SHORT).show();
+		}
+		
+		@Override
+		public void error(Device device, Exception errorException) {
+			if(errorException instanceof Command.PasswordErrorException){
+				mEditTextPassword.setError(errorException.getMessage());
+			} 
+			Toast.makeText(getApplicationContext(), device.getName() + ": " + errorException.getMessage(), Toast.LENGTH_SHORT).show();
+		}
+	};
+
+	protected DoorDevice createDoorDevcie(String name, BluetoothDevice device,
+			BluetoothAdapter mBluetoothAdapter) {
+		DoorDevice dev = new DoorDevice(name, device, mBluetoothAdapter);
+		dev.setResponseCallback(mDoorDeviceCallback);
+		return dev;
+	}
+
 
 	@Override  
     public void onListItemClick(ListView l, View v, int position, long id) { 

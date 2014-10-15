@@ -1,7 +1,7 @@
 package com.hoyoji.ibluetooth;
 
 public interface AsyncCallback {
-	public void success(Object object);
-	public void error(Exception errorException);
-	public void progress(String progressMsg);
+	public void success(Device device, Object data);
+	public void error(Device device, Exception errorException);
+	public void progress(Device device, String progressMsg);
 }
