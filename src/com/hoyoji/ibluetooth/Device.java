@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ public class Device  {
 	private boolean mIsRememberPassword = false;
 	private AsyncCallback mResponseCallback = null;
 	private int mPendingCommandCount = 0;
+//	private static Handler handler = new Handler(Looper.getMainLooper());
 
 	private BluetoothAdapter mBluetoothAdapter;
 	
@@ -92,6 +94,13 @@ public class Device  {
 					}
 					mConnectedThread.write(command.getBytes());
 					mPendingCommandCount++;
+//					handler.postDelayed(new Runnable(){
+//						@Override
+//						public void run() {
+//							Exception errorException = new Exception(getTypeName(command) + "指令超时，可能未成功送达");
+//							callback.error(Device.this, errorException );
+//						}
+//					}, 2000);
 					if(callback != null){
 						callback.success(this, command);
 					}
