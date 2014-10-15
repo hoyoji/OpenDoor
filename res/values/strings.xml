@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">芝麻开门</string>
+    <string name="app_name">蓝牙开门</string>
     <string name="action_settings">设置</string>
-    <string name="title_activity_devices">请选择设备</string>
+    <string name="main_menu_changepassword">修改密码</string>
 
 </resources>

@@ -10,6 +10,10 @@ import android.os.Message;
 import android.widget.Toast;
 
 public class Device  {
+	public static final byte TYPE_OUTPUT = 0x02;
+	public static final byte TYPE_WRITEPASSWORD = 0x00;
+	public static final byte TYPE_READPASSWORD = 0x01;
+		
 	private String mName;
 	private BluetoothDevice mBtDevice;
 	private String mPassword;
@@ -18,6 +22,8 @@ public class Device  {
 	private Command mCurrentCommand;
 //	private boolean mIsClosingPreviousConnection = false;
 	private boolean mIsRememberPassword = false;
+	private AsyncCallback mResponseCallback = null;
+	private int mPendingCommandCount = 0;
 
 	private BluetoothAdapter mBluetoothAdapter;
 	
@@ -82,9 +88,10 @@ public class Device  {
 			if(mConnectedThread != null && mConnectedThread.isConnected()){
 				try {
 					if(callback != null){
-						callback.progress(this, "正在发送命令 " + command.getTypeName() + " 到设备: " + getName() + "...");
+						callback.progress(this, "正在发送指令 " + getTypeName(command) + "...");
 					}
 					mConnectedThread.write(command.getBytes());
+					mPendingCommandCount++;
 					if(callback != null){
 						callback.success(this, command);
 					}
@@ -95,6 +102,16 @@ public class Device  {
 			} else {
 				connectAndIssueCommand(command, callback);
 			}
+	}
+
+	public String getTypeName(Command command) {
+		switch(command.getType())
+		{
+			case TYPE_OUTPUT : return "输出";
+			case TYPE_WRITEPASSWORD : return "修改密码";
+			case TYPE_READPASSWORD : return "读取密码";
+			default : return Integer.toHexString(command.getType());
+		}
 	}
 	
 	private void connectAndIssueCommand(Command command, final AsyncCallback callback){
@@ -150,13 +167,41 @@ public class Device  {
         	}
 
 			if(callback != null){
-				callback.progress(this, "正在连接到设备: " + getName() + " ...");
+				callback.progress(this, "正在连接...");
 			}
         	mConnectTask = ConnectTask.newInstance(new AsyncCallback(){
 				@Override
 				public void success(Device device, Object thread) {
 					mConnectedThread = (ConnectedThread)thread;
-
+					mConnectedThread.setResponseCallback(new AsyncCallback(){
+						@Override
+						public void success(Device device, Object data) {
+							mPendingCommandCount--;
+							if(mPendingCommandCount == 0){
+								disconnect(mResponseCallback);
+							}
+							if(mResponseCallback != null){
+								Command resp = new Command();
+								resp.parseResponse((byte[]) data);
+								mResponseCallback.success(Device.this, resp);
+							}
+						}
+				
+						@Override
+						public void error(Device device, Exception errorException) {
+							if(mResponseCallback != null){
+								mResponseCallback.error(Device.this, errorException);
+							}
+						}
+				
+						@Override
+						public void progress(Device device, String progressMsg) {
+							if(mResponseCallback != null){
+								mResponseCallback.progress(Device.this, progressMsg);
+							}
+						}
+						
+					});
 					if(callback != null){
 						callback.success(device, thread);
 					}
@@ -192,39 +237,6 @@ public class Device  {
 	}
 
 	public void setResponseCallback(final AsyncCallback asyncCallback) {
-		if(mConnectedThread == null || !mConnectedThread.isConnected()){
-			if(asyncCallback != null){
-				Exception errorException = new Exception("尚未连接到设备: " + getName());
-				asyncCallback.error(this, errorException);
-			}
-		} else {
-			if(asyncCallback != null){
-				asyncCallback.progress(this, "正在等待设备回复...");
-			}
-			mConnectedThread.setResponseCallback(new AsyncCallback(){
-				@Override
-				public void success(Device device, Object data) {
-					if(asyncCallback != null){
-						asyncCallback.success(Device.this, data);
-					}
-				}
-
-				@Override
-				public void error(Device device, Exception errorException) {
-					if(asyncCallback != null){
-						asyncCallback.success(Device.this, errorException);
-					}
-				}
-
-				@Override
-				public void progress(Device device, String progressMsg) {
-					if(asyncCallback != null){
-						asyncCallback.success(Device.this, progressMsg);
-					}
-				}
-				
-			});
-		}
-		
+		this.mResponseCallback = asyncCallback;
 	}
 }

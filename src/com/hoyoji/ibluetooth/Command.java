@@ -1,13 +1,11 @@
 package com.hoyoji.ibluetooth;
 
 public class Command {
+
 	
-	public final static byte CMD_OPEN = 0x01;
-	public final static byte CMD_CLOSE = 0x02;
-	public final static byte CMD_STOP = 0x03;
-	public final static byte RPLY_CLOSED = 0x04;
-	public final static byte RPLY_OPENNING = 0x05;
-	public final static byte RPLY_OPENED = 0x06;
+//	public final static byte RPLY_CLOSED = 0x04;
+//	public final static byte RPLY_OPENNING = 0x05;
+//	public final static byte RPLY_OPENED = 0x06;
 	
 	private final static byte[] HEADING = {(byte)0xA5, 0x5A};
 	private final static byte TAILING = (byte)0xAA;
@@ -33,11 +31,20 @@ public class Command {
 //		return strBuffer.toString();
 //	}
 	
+	public void parseResponse(byte[] buffer){
+		mCommand = buffer[3];
+		int dataLen = buffer[2]-3;
+		mData = new byte[dataLen];
+		for(int i = 0; i < mData.length; i++){
+			mData[i] = buffer[i+8];
+		}
+	}
+	
 	public byte[] getBytes(){
 		byte[] buffer = new byte[mData.length + 10];
 		buffer[0] = HEADING[0];
 		buffer[1] = HEADING[1];
-		buffer[2] = (byte)buffer.length;
+		buffer[2] = (byte)(buffer.length-3);
 		buffer[3] = mCommand;
 		buffer[4] = mPassword[0];
 		buffer[5] = mPassword[1];
@@ -55,7 +62,7 @@ public class Command {
 	
 	private byte checkSum(byte[] buffer) {
 		int sum = 0;
-		for(int i = 2; i < mData.length-2; i++){
+		for(int i = 2; i < buffer.length-2; i++){
 			sum += buffer[i];
 		}
 		return (byte) (sum % 256);
@@ -90,16 +97,6 @@ public class Command {
 		return mCommand;
 	}
 
-	public String getTypeName() {
-		switch(mCommand)
-		{
-			case CMD_OPEN : return "开门";
-			case CMD_CLOSE : return "关门";
-			case CMD_STOP : return "停止";
-			default : return "";
-		}
-	}
-
 	public byte[] getPassword() {
 		return mPassword;
 	}
@@ -115,5 +112,9 @@ public class Command {
 		 */
 		private static final long serialVersionUID = -9119473625039929740L;
 		
+	}
+
+	public byte[] getData() {
+		return mData;
 	}
 }

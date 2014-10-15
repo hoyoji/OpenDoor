@@ -14,6 +14,8 @@ public class ConnectedThread extends Thread {
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 	private AsyncCallback mCallbackResponse;
+	private boolean mClosing;
+	private static Handler handler = new Handler(Looper.getMainLooper());
 
     public ConnectedThread(BluetoothSocket socket) {
         mmSocket = socket;
@@ -22,6 +24,7 @@ public class ConnectedThread extends Thread {
 
         // Get the input and output streams, using temp objects because
         // member streams are final
+    	mClosing = false;
         try {
             tmpIn = socket.getInputStream();
             tmpOut = socket.getOutputStream();
@@ -32,7 +35,7 @@ public class ConnectedThread extends Thread {
     }
 
     public void run() {
-        byte[] buffer = new byte[256];  // buffer store for the stream
+        final byte[] buffer = new byte[256];  // buffer store for the stream
         int bytes; // bytes returned from read()
 
         // Keep listening to the InputStream until an exception occurs
@@ -43,24 +46,23 @@ public class ConnectedThread extends Thread {
                 // Send the obtained bytes to the UI activity
 //                mHandler.obtainMessage(2, bytes, -1, new String(buffer)).sendToTarget();
                 if(mCallbackResponse != null){
-                	final Response resp = new Response();
-                	resp.parseBytes(buffer);
-        			Handler handler = new Handler(Looper.getMainLooper());
 					handler.post(new Runnable() {
 						public void run() {
-		                	mCallbackResponse.success(null, resp);
+		                	mCallbackResponse.success(null, buffer);
 		                }
 		            });
                 }
             } catch (final IOException e) {
-                if(mCallbackResponse != null){
-	            	Handler handler = new Handler(Looper.getMainLooper());
-					handler.post(new Runnable() {
-						public void run() {
-			            	mCallbackResponse.error(null, e);
-		                }
-		            });
-                }
+	                if(mCallbackResponse != null){
+						handler.post(new Runnable() {
+							public void run() {
+				            	if(!mClosing){
+				                	mClosing = false;
+				                	mCallbackResponse.error(null, e);
+				            	}
+			                }
+			            });
+	                }
                 break;
             }
         }
@@ -82,6 +84,7 @@ public class ConnectedThread extends Thread {
     /* Call this from the main activity to shutdown the connection */
     public void cancel() {
         try {
+        	mClosing = true;
         	if(mmInStream != null){
         		mmInStream.close();
         	}
@@ -92,7 +95,8 @@ public class ConnectedThread extends Thread {
     		if(mmSocket != null){
     			mmSocket.close();
     		}
-        } catch (IOException e) { }
+        } catch (IOException e) { 
+    	}
     }
 
 }
