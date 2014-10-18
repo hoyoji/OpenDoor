@@ -1,6 +1,7 @@
 package com.hoyoji.ibluetooth;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 
 public class DoorDevice extends Device {
 
@@ -8,8 +9,8 @@ public class DoorDevice extends Device {
 	public final static byte CMD_CLOSE = 0x02;
 	public final static byte CMD_STOP = 0x04;
 	
-	public DoorDevice(String name, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter) {
-		super(name, btDevice, bluetoothAdapter);
+	public DoorDevice(Context ctx, String name, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter) {
+		super(ctx, name, btDevice, bluetoothAdapter);
 	}
 
 	public void open(final AsyncCallback callback){

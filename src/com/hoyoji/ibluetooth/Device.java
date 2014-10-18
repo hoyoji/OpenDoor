@@ -4,7 +4,9 @@ import java.io.IOException;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -28,11 +30,14 @@ public class Device  {
 //	private static Handler handler = new Handler(Looper.getMainLooper());
 
 	private BluetoothAdapter mBluetoothAdapter;
+	private SharedPreferences mSharedPreferences;
 	
-	public Device(String name, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter){
+	public Device(Context ctx, String name, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter){
 		mName = name;
 		mBtDevice = btDevice;
 		mBluetoothAdapter = bluetoothAdapter;
+		mSharedPreferences = ctx.getSharedPreferences("device_passwords", 0);
+		mPassword = mSharedPreferences.getString(btDevice.getAddress(), "0000");
 	}
 
 	public BluetoothAdapter getBluetoothAdapter() {
@@ -49,11 +54,13 @@ public class Device  {
 	
 	public void setPassword(String password){
 		mPassword = password;
+		mSharedPreferences.edit().putString(mBtDevice.getAddress(), mPassword).commit();
 	}
 	
 	public String getPassword(){
 		return mPassword;
 	}
+	
 	public void setIsRememberPassword(boolean isRememberPassword){
 		mIsRememberPassword = isRememberPassword;
 	}

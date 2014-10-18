@@ -333,7 +333,7 @@ public class MainActivity extends ListActivity {
 
 	protected DoorDevice createDoorDevcie(String name, BluetoothDevice device,
 			BluetoothAdapter mBluetoothAdapter) {
-		DoorDevice dev = new DoorDevice(name, device, mBluetoothAdapter);
+		DoorDevice dev = new DoorDevice(this, name, device, mBluetoothAdapter);
 		dev.setResponseCallback(mDoorDeviceCallback);
 		return dev;
 	}
@@ -343,12 +343,8 @@ public class MainActivity extends ListActivity {
     public void onListItemClick(ListView l, View v, int position, long id) { 
 		mSelectedDevice = mDevicesArray.get(position);
 		String password = mSelectedDevice.getPassword();
-		if(password != null && password.length() > 0){
-			mEditTextPassword.setText(password);
-		} else {
-			mEditTextPassword.setText("0000");
-		}
-    	mEditTextPassword.setError(null);
+		mEditTextPassword.setText(password);
+		mEditTextPassword.setError(null);
     	
         if (mBluetoothAdapter.isEnabled()) {
 //    		mSelectedDevice.connect(new ConnectCallback(){
