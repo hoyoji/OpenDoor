@@ -153,6 +153,12 @@ public class MainActivity extends ListActivity {
         IntentFilter discoverfilter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
     	this.registerReceiver(discoverReceiver, discoverfilter);
 		
+	}
+
+
+	@Override
+	protected void onResume() {
+		super.onResume();
    		discoverDevices();
 	}
 

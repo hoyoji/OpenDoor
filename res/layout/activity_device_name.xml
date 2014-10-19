@@ -9,6 +9,14 @@
     android:orientation="vertical"
     tools:context=".DeviceNameActivity" >
     
+	<TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="请先保持按住设备上的设置按键，然后点击设置名称"
+        android:gravity="center"
+        android:textColor="#ff0099cc"
+        android:padding="10dp"
+	    />
     
     <EditText android:id="@+id/edit_old_password" 
         android:layout_width="match_parent"
