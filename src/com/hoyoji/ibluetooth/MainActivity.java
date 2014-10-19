@@ -15,6 +15,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -26,7 +27,6 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.hoyoji.ibluetooth.R;
 
@@ -280,7 +280,7 @@ public class MainActivity extends ListActivity {
 		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 		if(pairedDevices.size() > 0){
 			for(BluetoothDevice btDevice : pairedDevices){
-				mDevicesArray.add(createDoorDevcie(btDevice.getName(), btDevice, mBluetoothAdapter));
+				mDevicesArray.add(createDoorDevcie(btDevice, mBluetoothAdapter));
 			}
 			((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
 		}
@@ -307,7 +307,7 @@ public class MainActivity extends ListActivity {
 					}
 					return;
 				}
-				mDevicesArray.add(createDoorDevcie(device.getName(), device, mBluetoothAdapter));
+				mDevicesArray.add(createDoorDevcie(device, mBluetoothAdapter));
 				
 				((ArrayAdapter)getListAdapter()).notifyDataSetChanged();
 			}
@@ -372,9 +372,9 @@ public class MainActivity extends ListActivity {
 		}
 	};
 
-	protected DoorDevice createDoorDevcie(String name, BluetoothDevice device,
+	protected DoorDevice createDoorDevcie(BluetoothDevice device,
 			BluetoothAdapter mBluetoothAdapter) {
-		DoorDevice dev = new DoorDevice(getApplicationContext(), name, device, mBluetoothAdapter);
+		DoorDevice dev = new DoorDevice(getApplicationContext(), device, mBluetoothAdapter);
 		dev.setResponseCallback(mDoorDeviceCallback);
 		return dev;
 	}
@@ -467,6 +467,37 @@ public class MainActivity extends ListActivity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		
+		 if(item.getItemId() == R.id.action_changepassword){
+
+			if(mSelectedDevice == null){
+				ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
+				return true;
+			}
+			
+			 Intent intent = new Intent(this, ChangePasswordActivity.class);
+			 intent.putExtra("DEVICE_ADDRESS", mSelectedDevice.getBtDevice().getAddress());
+			 startActivity(intent);
+			 return true;
+		 } else if(item.getItemId() == R.id.action_devicename){
+
+			if(mSelectedDevice == null){
+				ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
+				return true;
+			}
+			
+			 Intent intent = new Intent(this, DeviceNameActivity.class);
+			 intent.putExtra("DEVICE_ADDRESS", mSelectedDevice.getBtDevice().getAddress());
+			 startActivity(intent);
+			 return true;
+		 }
+		
+		return super.onOptionsItemSelected(item);
+	}
+
 
 
 	@Override

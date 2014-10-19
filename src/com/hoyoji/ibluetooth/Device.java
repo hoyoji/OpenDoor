@@ -34,13 +34,13 @@ public class Device  {
 	private BluetoothAdapter mBluetoothAdapter;
 	private SharedPreferences mSharedPreferences;
 	
-	public Device(Context ctx, String name, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter){
-		mName = name;
+	public Device(Context ctx, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter){
 		mBtDevice = btDevice;
 		mBluetoothAdapter = bluetoothAdapter;
-		mSharedPreferences = ctx.getSharedPreferences("device_passwords", 0);
+		mSharedPreferences = ctx.getSharedPreferences("device_info", 0);
 		mPassword = mSharedPreferences.getString(btDevice.getAddress(), "0000");
-		mIsRememberPassword = mSharedPreferences.getBoolean(btDevice.getAddress()+"_remember", true);
+		mIsRememberPassword = mSharedPreferences.getBoolean(btDevice.getAddress() + "_remember", true);
+		mName = mSharedPreferences.getString(btDevice.getAddress() + "_name", btDevice.getName());
 	}
 
 	public BluetoothAdapter getBluetoothAdapter() {
@@ -48,6 +48,9 @@ public class Device  {
 	}
 	
 	public void setName(String name){
+		if(!mName.equals(name)){
+			mSharedPreferences.edit().putString(mBtDevice.getAddress() + "_name", name).commit();
+		}
 		mName = name;
 	}
 	
@@ -84,7 +87,29 @@ public class Device  {
 		return mBtDevice;
 	}
 	
-	
+
+	public void changePassword(byte[] password, final AsyncCallback callback) throws Exception{
+		Command command = new Command();
+		command.setType(Device.TYPE_WRITEPASSWORD);
+		byte[] data = {};
+		
+		if(password.length == 4) {
+			byte[] passwordBytes = new byte[4];
+			for(int i = 0; i < 4; i++){
+				if(password[i] < '0' || password[i] > '9'){
+					throw new Exception("密码只能包含数字");
+				} else {
+					passwordBytes[i] = (byte) (password[i] - 48);
+				}
+			}
+			data = passwordBytes;
+		} else {
+			throw new PasswordErrorException("请输入4位数的密码");
+		}
+		
+		command.setData(data);
+		issueCommand(command, callback);
+	}
 	
 	protected void issueCommand(final Command command, final AsyncCallback callback){
 

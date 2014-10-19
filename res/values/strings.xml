@@ -4,5 +4,8 @@
     <string name="app_name">蓝牙开门</string>
     <string name="action_settings">设置</string>
     <string name="main_menu_changepassword">修改密码</string>
+    <string name="main_menu_devicename">设备名称</string>
+    <string name="title_activity_change_password">修改密码</string>
+    <string name="title_activity_device_name">设备名称</string>
 
 </resources>
