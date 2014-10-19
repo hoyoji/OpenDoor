@@ -82,6 +82,12 @@ public class MainActivity extends ListActivity {
 					boolean isChecked) {
 				if(mSelectedDevice != null){
 					mSelectedDevice.setIsRememberPassword(isChecked);
+					if(isChecked){
+						mEditTextPassword.setText(mSelectedDevice.getPassword());
+					} else {
+						mEditTextPassword.setText("");
+					}
+					mEditTextPassword.setError(null);
 				}
 			}
 		});
