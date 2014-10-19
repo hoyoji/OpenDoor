@@ -12,7 +12,7 @@ public class Command {
 	
 	
 	private byte mCommand;
-	private byte[] mPassword;
+	private byte[] mPassword = {0x00, 0x00, 0x00, 0x00};
 	private byte[] mData = {};
 	
 	public Command(){

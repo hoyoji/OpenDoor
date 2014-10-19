@@ -2,6 +2,8 @@ package com.hoyoji.ibluetooth;
 
 import java.io.IOException;
 
+import com.hoyoji.ibluetooth.Command.PasswordErrorException;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -38,6 +40,7 @@ public class Device  {
 		mBluetoothAdapter = bluetoothAdapter;
 		mSharedPreferences = ctx.getSharedPreferences("device_passwords", 0);
 		mPassword = mSharedPreferences.getString(btDevice.getAddress(), "0000");
+		mIsRememberPassword = mSharedPreferences.getBoolean(btDevice.getAddress()+"_remember", true);
 	}
 
 	public BluetoothAdapter getBluetoothAdapter() {
@@ -54,7 +57,6 @@ public class Device  {
 	
 	public void setPassword(String password){
 		mPassword = password;
-		mSharedPreferences.edit().putString(mBtDevice.getAddress(), mPassword).commit();
 	}
 	
 	public String getPassword(){
@@ -63,6 +65,7 @@ public class Device  {
 	
 	public void setIsRememberPassword(boolean isRememberPassword){
 		mIsRememberPassword = isRememberPassword;
+		mSharedPreferences.edit().putBoolean(mBtDevice.getAddress()+"_remember", mIsRememberPassword).commit();
 	}
 	
 	public boolean getIsRememberPassword(){
@@ -198,10 +201,25 @@ public class Device  {
 							if(mPendingCommandCount == 0){
 								disconnect(mResponseCallback);
 							}
-							if(mResponseCallback != null){
-								Command resp = new Command();
-								resp.parseResponse((byte[]) data);
-								mResponseCallback.success(Device.this, resp);
+							Command resp = new Command();
+							resp.parseResponse((byte[]) data);
+							byte[] passwordBytes = resp.getPassword();
+							if(passwordBytes[0] == 0xFF && passwordBytes[1] == 0xFF && passwordBytes[2] == 0xFF && passwordBytes[3] == 0xFF ){
+								if(mResponseCallback != null){
+									PasswordErrorException errorException = new PasswordErrorException("密码错误, " + getTypeName(resp) + " 指令发送失败");
+									mResponseCallback.error(Device.this, errorException);
+								}
+							} else {
+								if(mIsRememberPassword){
+									// 如果密码正确的话，保存密码
+									String password = mSharedPreferences.getString("password", "0000");
+									if(!password.equals(mPassword)){
+										mSharedPreferences.edit().putString(mBtDevice.getAddress(), mPassword).commit();
+									}
+								}
+								if(mResponseCallback != null){
+									mResponseCallback.success(Device.this, resp);
+								}
 							}
 						}
 				

@@ -11,12 +11,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -40,6 +45,7 @@ public class MainActivity extends ListActivity {
 	private Button mBtnOpen;
 //	private TextView mTextViewEmpty;
 	private TextView mTextViewFooter;
+	private CheckBox mIsRememberPassword;
 	
 	private ArrayList<DoorDevice> mDevicesArray = new ArrayList<DoorDevice>();
 
@@ -52,6 +58,34 @@ public class MainActivity extends ListActivity {
 		
 		mTextViewStatus = (TextView) findViewById(R.id.mainTextViewStatus);
 		mEditTextPassword = (EditText) findViewById(R.id.mainEditTextPassword);
+		mEditTextPassword.addTextChangedListener(new TextWatcher(){
+			@Override
+			public void afterTextChanged(Editable s) {
+				if(mSelectedDevice != null){
+					mSelectedDevice.setPassword(s.toString());
+				}
+			}
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {
+			}
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before,
+					int count) {
+			}
+		});
+		
+		mIsRememberPassword = (CheckBox) findViewById(R.id.mainCheckBoxRememberPasword);
+		mIsRememberPassword.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				if(mSelectedDevice != null){
+					mSelectedDevice.setIsRememberPassword(isChecked);
+				}
+			}
+		});
+		
 		mBtnStop = (Button) findViewById(R.id.mainBtnStop);
 		mBtnClose = (Button) findViewById(R.id.mainBtnClose);
 		mBtnOpen = (Button) findViewById(R.id.mainBtnOpen);
@@ -132,7 +166,8 @@ public class MainActivity extends ListActivity {
 			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
-		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
+//		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
+//		mSelectedDevice.setIsRememberPassword(mIsRememberPassword.isChecked());
 		mSelectedDevice.stop(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
@@ -141,7 +176,7 @@ public class MainActivity extends ListActivity {
 			@Override
 			public void error(Device device, Exception errorMsg) {
 				if(errorMsg instanceof Command.PasswordErrorException){
-					mEditTextPassword.setError(errorMsg.getMessage());
+					mEditTextPassword.setError(device.getName() + ": " + errorMsg.getMessage());
 				}
 				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
 			}
@@ -170,7 +205,7 @@ public class MainActivity extends ListActivity {
 			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
-		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
+//		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.close(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
@@ -210,7 +245,7 @@ public class MainActivity extends ListActivity {
 			return;
 		}
 		
-		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
+//		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.open(new AsyncCallback(){
 			@Override
 			public void success(Device device, Object data) {
@@ -333,7 +368,7 @@ public class MainActivity extends ListActivity {
 
 	protected DoorDevice createDoorDevcie(String name, BluetoothDevice device,
 			BluetoothAdapter mBluetoothAdapter) {
-		DoorDevice dev = new DoorDevice(this, name, device, mBluetoothAdapter);
+		DoorDevice dev = new DoorDevice(getApplicationContext(), name, device, mBluetoothAdapter);
 		dev.setResponseCallback(mDoorDeviceCallback);
 		return dev;
 	}
@@ -342,10 +377,14 @@ public class MainActivity extends ListActivity {
 	@Override  
     public void onListItemClick(ListView l, View v, int position, long id) { 
 		mSelectedDevice = mDevicesArray.get(position);
-		String password = mSelectedDevice.getPassword();
-		mEditTextPassword.setText(password);
+		mIsRememberPassword.setChecked(mSelectedDevice.getIsRememberPassword());
+		if(mSelectedDevice.getIsRememberPassword()){
+			mEditTextPassword.setText(mSelectedDevice.getPassword());
+		} else {
+			mEditTextPassword.setText("");
+		}
 		mEditTextPassword.setError(null);
-    	
+		
         if (mBluetoothAdapter.isEnabled()) {
 //    		mSelectedDevice.connect(new ConnectCallback(){
 //				@Override

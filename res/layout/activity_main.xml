@@ -68,7 +68,7 @@
             </EditText>
 
             <CheckBox
-                android:id="@+id/checkBoxRememberPasword"
+                android:id="@+id/mainCheckBoxRememberPasword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="记住密码" />
