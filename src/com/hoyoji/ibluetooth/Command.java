@@ -32,8 +32,14 @@ public class Command {
 //	}
 	
 	public void parseResponse(byte[] buffer){
+
+		int dataLen = buffer[2];
 		mCommand = buffer[3];
-		int dataLen = buffer[2]-3;
+		mPassword[0] = buffer[4];
+		mPassword[1] = buffer[5];
+		mPassword[2] = buffer[6];
+		mPassword[3] = buffer[7];
+
 		mData = new byte[dataLen];
 		for(int i = 0; i < mData.length; i++){
 			mData[i] = buffer[i+8];

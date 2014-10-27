@@ -1,18 +1,15 @@
 package com.hoyoji.ibluetooth;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.hoyoji.ibluetooth.Command.PasswordErrorException;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.widget.Toast;
 
 public class Device  {
 	public static final byte TYPE_OUTPUT = 0x02;
@@ -33,6 +30,14 @@ public class Device  {
 
 	private BluetoothAdapter mBluetoothAdapter;
 	private SharedPreferences mSharedPreferences;
+	
+	Timer timer = new Timer(true);   
+	// true 说明这个timer以daemon方式运行（优先级低，   
+	// 程序结束timer也自动结束），注意，javax.swing   
+	// 包中也有一个Timer类，如果import中用到swing包，   
+	// 要注意名字的冲突。   
+	  
+	TimerTask task;
 	
 	public Device(Context ctx, BluetoothDevice btDevice, BluetoothAdapter bluetoothAdapter){
 		mBtDevice = btDevice;
@@ -224,8 +229,19 @@ public class Device  {
 								mPendingCommandCount--;
 							}
 							if(mPendingCommandCount == 0){
-								disconnect(mResponseCallback);
+								if(task != null){
+									task.cancel();
+								}
+								task = new TimerTask() {   
+									public void run() {   
+										disconnect(mResponseCallback);
+										task = null;
+										timer.purge();
+									}
+								};
+								timer.schedule(task, 30000);   
 							}
+							
 							Command resp = new Command();
 							resp.parseResponse((byte[]) data);
 							byte[] passwordBytes = resp.getPassword();
