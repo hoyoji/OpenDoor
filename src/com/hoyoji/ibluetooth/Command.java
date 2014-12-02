@@ -13,7 +13,7 @@ public class Command {
 	
 	private byte mCommand;
 	private byte[] mPassword = {0x00, 0x00, 0x00, 0x00};
-	private byte[] mData = {};
+	private byte[] mData = {0x00, 0x00, 0x00, 0x00};
 	
 	public Command(){
 		
@@ -40,9 +40,11 @@ public class Command {
 		mPassword[2] = buffer[6];
 		mPassword[3] = buffer[7];
 
-		mData = new byte[dataLen];
-		for(int i = 0; i < mData.length; i++){
-			mData[i] = buffer[i+8];
+		if(dataLen >= 10){
+			mData = new byte[dataLen - 10];
+			for(int i = 0; i < mData.length; i++){
+				mData[i] = buffer[i+8];
+			}
 		}
 	}
 	
@@ -95,8 +97,24 @@ public class Command {
 		mCommand = command;
 	}
 	
-	public void setData(byte[] data){
+	public void setData1(byte[] data){
 		mData = data;
+	}
+	
+	public byte[] getData1() {
+		return mData;
+	}
+	
+	public void setTimeMultiple(int multiple){
+		mData[1] = (byte) multiple;
+	}
+	
+	public void setTimeDelay(int delay){
+		mData[2] = (byte) delay;
+	}
+	
+	public void setTimeOpen(int open){
+		mData[3] = (byte) open;
 	}
 
 	public byte getType() {
@@ -120,7 +138,4 @@ public class Command {
 		
 	}
 
-	public byte[] getData() {
-		return mData;
-	}
 }

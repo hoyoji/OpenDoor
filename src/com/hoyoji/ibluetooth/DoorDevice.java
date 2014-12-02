@@ -16,16 +16,18 @@ public class DoorDevice extends Device {
 	public void open(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = {DoorDevice.CMD_OPEN};
-		command.setData(data);
+		byte[] data = command.getData1();
+		data[0] = 7;
+		command.setData1(data);
 		issueCommand(command, callback);
 	}
 	
 	public void close(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = {DoorDevice.CMD_CLOSE};
-		command.setData(data);
+		byte[] data = command.getData1();
+		data[0] = 8;
+		command.setData1(data);
 		issueCommand(command, callback);
 		
 	}
@@ -33,17 +35,18 @@ public class DoorDevice extends Device {
 	public void stop(final AsyncCallback callback){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = {DoorDevice.CMD_STOP};
-		command.setData(data);
+		byte[] data = command.getData1();
+		data[0] = DoorDevice.CMD_STOP;
+		command.setData1(data);
 		issueCommand(command, callback);
 	}
 
 
 	@Override
 	public String getTypeName(Command command) {
-		if(command.getData() != null){
+		if(command.getData1() != null){
 			if(command.getType() == Device.TYPE_OUTPUT){
-				switch(command.getData()[0])
+				switch(command.getData1()[0])
 				{
 					case CMD_OPEN : return "开门";
 					case CMD_CLOSE : return "关门";

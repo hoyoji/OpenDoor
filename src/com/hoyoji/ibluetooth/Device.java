@@ -112,7 +112,7 @@ public class Device  {
 			throw new PasswordErrorException("请输入4位数的密码");
 		}
 		
-		command.setData(data);
+		command.setData1(data);
 		issueCommand(command, callback);
 	}
 	
@@ -245,9 +245,14 @@ public class Device  {
 							Command resp = new Command();
 							resp.parseResponse((byte[]) data);
 							byte[] passwordBytes = resp.getPassword();
-							if(passwordBytes[0] == 0xFF && passwordBytes[1] == 0xFF && passwordBytes[2] == 0xFF && passwordBytes[3] == 0xFF ){
+							if(passwordBytes[0] == -2 && passwordBytes[1] == -2 && passwordBytes[2] == -2 && passwordBytes[3] == -2 ){
 								if(mResponseCallback != null){
 									PasswordErrorException errorException = new PasswordErrorException("密码错误, " + getTypeName(resp) + " 指令发送失败");
+									mResponseCallback.error(Device.this, errorException);
+								}
+							} if(passwordBytes[0] == -3 && passwordBytes[1] == -3 && passwordBytes[2] == -3 && passwordBytes[3] == -3 ){
+								if(mResponseCallback != null){
+									Exception errorException = new Exception("校验错误, " + getTypeName(resp) + " 指令发送失败，请重新发送");
 									mResponseCallback.error(Device.this, errorException);
 								}
 							} else {
