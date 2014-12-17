@@ -13,31 +13,34 @@ public class DoorDevice extends Device {
 		super(ctx, btDevice, bluetoothAdapter);
 	}
 
-	public void open(final AsyncCallback callback){
+	public void open(final AsyncCallback callback, int portNumber, int timeMultiple, int timeDelay, int timeOpen){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = command.getData1();
-		data[0] = 7;
-		command.setData1(data);
+		command.setOutputPort(portNumber);
+		command.setTimeMultiple(timeMultiple);
+		command.setTimeDelay(timeDelay);
+		command.setTimeOpen(timeOpen);
 		issueCommand(command, callback);
 	}
 	
-	public void close(final AsyncCallback callback){
+	public void close(final AsyncCallback callback, int portNumber, int timeMultiple, int timeDelay, int timeOpen){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = command.getData1();
-		data[0] = 8;
-		command.setData1(data);
+		command.setOutputPort(portNumber);
+		command.setTimeMultiple(timeMultiple);
+		command.setTimeDelay(timeDelay);
+		command.setTimeOpen(timeOpen);
 		issueCommand(command, callback);
 		
 	}
 	
-	public void stop(final AsyncCallback callback){
+	public void stop(final AsyncCallback callback, int portNumber, int timeMultiple, int timeDelay, int timeOpen){
 		Command command = new Command();
 		command.setType(Device.TYPE_OUTPUT);
-		byte[] data = command.getData1();
-		data[0] = DoorDevice.CMD_STOP;
-		command.setData1(data);
+		command.setOutputPort(portNumber);
+		command.setTimeMultiple(timeMultiple);
+		command.setTimeDelay(timeDelay);
+		command.setTimeOpen(timeOpen);
 		issueCommand(command, callback);
 	}
 

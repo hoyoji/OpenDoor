@@ -46,6 +46,11 @@ public class MainActivity extends ListActivity {
 //	private TextView mTextViewEmpty;
 	private TextView mTextViewFooter;
 	private CheckBox mIsRememberPassword;
+	private TextView mTextViewPortNumber;
+	private TextView mTextViewTimeOpen;
+	private TextView mTextViewTimeMultiple;
+	private TextView mTextViewTimeDelay;
+	
 	
 	private ArrayList<DoorDevice> mDevicesArray = new ArrayList<DoorDevice>();
 
@@ -55,6 +60,11 @@ public class MainActivity extends ListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		mTextViewPortNumber = (TextView) findViewById(R.id.mainPortNumber);
+		mTextViewTimeOpen = (TextView) findViewById(R.id.mainTimeOpen);
+		mTextViewTimeDelay = (TextView) findViewById(R.id.mainTimeDelay);
+		mTextViewTimeMultiple = (TextView) findViewById(R.id.mainTimeMultiple);
 		
 		mTextViewStatus = (TextView) findViewById(R.id.mainTextViewStatus);
 		mEditTextPassword = (EditText) findViewById(R.id.mainEditTextPassword);
@@ -178,6 +188,15 @@ public class MainActivity extends ListActivity {
 			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
+		if(mTextViewPortNumber.getText() == null || mTextViewPortNumber.getText().length() == 0){
+			ToastUtils.showMessageLong(getApplicationContext(), "请输入端口号！");
+			return;
+		}
+		int portNumber = Integer.parseInt(mTextViewPortNumber.getText().toString());
+		int timeMultiple = Integer.parseInt(mTextViewTimeMultiple.getText().toString());
+		int timeDelay = Integer.parseInt(mTextViewTimeDelay.getText().toString());
+		int timeOpen = Integer.parseInt(mTextViewTimeOpen.getText().toString());
+		
 //		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 //		mSelectedDevice.setIsRememberPassword(mIsRememberPassword.isChecked());
 		mSelectedDevice.stop(new AsyncCallback(){
@@ -197,7 +216,7 @@ public class MainActivity extends ListActivity {
 				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + progressMsg);
 			}
 			
-		});
+		}, portNumber, timeMultiple, timeDelay, timeOpen);
 		
 	}
 
@@ -217,6 +236,15 @@ public class MainActivity extends ListActivity {
 			ToastUtils.showMessageLong(getApplicationContext(), "请先选择一个设备！");
 			return;
 		}
+		if(mTextViewPortNumber.getText() == null || mTextViewPortNumber.getText().length() == 0){
+			ToastUtils.showMessageLong(getApplicationContext(), "请输入端口号！");
+			return;
+		}
+		int portNumber = Integer.parseInt(mTextViewPortNumber.getText().toString());
+		int timeMultiple = Integer.parseInt(mTextViewTimeMultiple.getText().toString());
+		int timeDelay = Integer.parseInt(mTextViewTimeDelay.getText().toString());
+		int timeOpen = Integer.parseInt(mTextViewTimeOpen.getText().toString());
+		
 //		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.close(new AsyncCallback(){
 			@Override
@@ -236,7 +264,7 @@ public class MainActivity extends ListActivity {
 				
 			}
 			
-		});
+		}, portNumber, timeMultiple, timeDelay, timeOpen);
 		
 	}
 
@@ -257,6 +285,15 @@ public class MainActivity extends ListActivity {
 			return;
 		}
 		
+		if(mTextViewPortNumber.getText() == null || mTextViewPortNumber.getText().length() == 0){
+			ToastUtils.showMessageLong(getApplicationContext(), "请输入端口号！");
+			return;
+		}
+		int portNumber = Integer.parseInt(mTextViewPortNumber.getText().toString());
+		int timeMultiple = Integer.parseInt(mTextViewTimeMultiple.getText().toString());
+		int timeDelay = Integer.parseInt(mTextViewTimeDelay.getText().toString());
+		int timeOpen = Integer.parseInt(mTextViewTimeOpen.getText().toString());
+		
 //		mSelectedDevice.setPassword(mEditTextPassword.getText().toString());
 		mSelectedDevice.open(new AsyncCallback(){
 			@Override
@@ -275,7 +312,7 @@ public class MainActivity extends ListActivity {
 				} 
 				ToastUtils.showMessageLong(getApplicationContext(), device.getName() + ": " + errorMsg.getMessage());
 			}
-		});
+		}, portNumber, timeMultiple, timeDelay, timeOpen);
 	}
 
 

@@ -105,6 +105,10 @@ public class Command {
 		return mData;
 	}
 	
+	public void setOutputPort(int port){
+		mData[0] = (byte) port;
+	}
+	
 	public void setTimeMultiple(int multiple){
 		mData[1] = (byte) multiple;
 	}
